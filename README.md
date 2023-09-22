@@ -17,7 +17,7 @@ A game based on mechanics from StoneHearth and MineCraft, I seek to revive the f
   - [ ] Add different types of Terrains and Biomes
   - [ ] Add Details generator (Plants, Animals, Structures, etc.)
   - [ ] Add Water Blocks
-  - [ ] (Optional) Have water physics
+  - [ ] \(Optional) Have water physics
 
 - [ ] Player Controlable Characters
 
