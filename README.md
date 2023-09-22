@@ -32,3 +32,9 @@ A game based on mechanics from StoneHearth and MineCraft, I seek to revive the f
 - [ ] Boss AI
 
 - [ ] Building Mode
+
+- [ ] Graphics
+
+- [ ] Sounds
+
+- [ ] Music
