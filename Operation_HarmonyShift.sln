@@ -1,13 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.6.33829.357
+VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 16.0.0.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyGame.Windows", "MyGame.Windows\MyGame.Windows.csproj", "{307E155F-1E93-4326-93DC-F002488B3905}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift.Windows", "MainGame\Operation_HarmonyShift\Operation_HarmonyShift.Windows\Operation_HarmonyShift.Windows.csproj", "{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyGame", "MyGame\MyGame.csproj", "{82B9FE6A-2347-4D5B-9881-7AE45849B7E6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift", "MainGame\Operation_HarmonyShift\Operation_HarmonyShift\Operation_HarmonyShift.csproj", "{1C9474C4-DC48-438F-970D-5D9AEBD90250}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorldBuilding", "WorldBuilding\WorldBuilding.csproj", "{93CA2BE7-EBFA-4A0F-8A53-3BC005272BAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldBuilding", "WorldBuilding\WorldBuilding.csproj", "{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,18 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{307E155F-1E93-4326-93DC-F002488B3905}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{307E155F-1E93-4326-93DC-F002488B3905}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{307E155F-1E93-4326-93DC-F002488B3905}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{307E155F-1E93-4326-93DC-F002488B3905}.Release|Any CPU.Build.0 = Release|Any CPU
-		{82B9FE6A-2347-4D5B-9881-7AE45849B7E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{82B9FE6A-2347-4D5B-9881-7AE45849B7E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{82B9FE6A-2347-4D5B-9881-7AE45849B7E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{82B9FE6A-2347-4D5B-9881-7AE45849B7E6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{93CA2BE7-EBFA-4A0F-8A53-3BC005272BAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{93CA2BE7-EBFA-4A0F-8A53-3BC005272BAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{93CA2BE7-EBFA-4A0F-8A53-3BC005272BAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{93CA2BE7-EBFA-4A0F-8A53-3BC005272BAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

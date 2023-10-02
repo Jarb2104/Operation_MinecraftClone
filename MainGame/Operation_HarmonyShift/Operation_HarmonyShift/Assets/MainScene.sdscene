@@ -1,0 +1,127 @@
+!SceneAsset
+Id: 4166811c-5c47-4707-bf7f-41c4e80a478e
+SerializedVersion: {Stride: 3.1.0.1}
+Tags: []
+ChildrenIds: []
+Offset: {X: 0.0, Y: 0.0, Z: 0.0}
+Hierarchy:
+    RootParts:
+        - ref!! b3c3ce7e-d1df-4d4d-bbb5-74a40f002f6a
+        - ref!! 72bcaef3-4de7-4109-b79f-2059b89fc8b5
+        - ref!! 54e8d03b-ed77-4977-bd6b-be5fbbb29ba3
+        - ref!! 33c99451-8ad4-4b0f-9ebe-6a1fb1ae904b
+        - ref!! a93b7110-d065-4738-8e79-df379abff061
+    Parts:
+        -   Entity:
+                Id: 33c99451-8ad4-4b0f-9ebe-6a1fb1ae904b
+                Name: GameProfiler
+                Components:
+                    4202658ced35a7e79e19b0703217219a: !TransformComponent
+                        Id: 428c422a-6545-46be-9414-ed8db452b6aa
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    46398d1b245defa6cc680b9ccf829821: !Operation_HarmonyShift.GameProfiler,Operation_HarmonyShift
+                        Id: 1df30a00-4892-4fd1-ad55-5bdbacbba3cb
+                        Enabled: true
+                        TextColor: {R: 144, G: 238, B: 144, A: 255}
+                        RefreshTime: 500.0
+                        SortingMode: ByTime
+                        FilteringMode: Fps
+                        ResultPage: 1
+        -   Folder: Entities/WorldEntities
+            Entity:
+                Id: 54e8d03b-ed77-4977-bd6b-be5fbbb29ba3
+                Name: WorldMesh
+                Components:
+                    49eb4cba28639ae35d1c9c79308432ad: !TransformComponent
+                        Id: b5513d32-280d-4781-a950-28e495501006
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 1.0, Z: 0.0, W: -4.371139E-08}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children:
+                            37c0df5a47e93325a79a0d270bda6d46: ref!! 72860c48-6426-407f-bbd7-fae17bc44d58
+        -   Entity:
+                Id: 72bcaef3-4de7-4109-b79f-2059b89fc8b5
+                Name: Skybox
+                Components:
+                    d6e7762f9c90b5c3f6666f66e8e8bf4c: !TransformComponent
+                        Id: 237b093d-b1f1-4e09-a3cb-feea7b9b886a
+                        Position: {X: 0.0, Y: 2.0, Z: -2.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    0a2e547c39159b7c44e40759f39da5f2: !BackgroundComponent
+                        Id: 830c20e4-d71b-4863-8b15-acf57d0e5afc
+                        Texture: 1c16a699-2d25-4f56-ad49-f6eaa47d2d50:Skybox texture
+                    b089c0154a6893cd321ada2df5fca5a3: !LightComponent
+                        Id: a524e186-af03-49f6-a7cd-eac667ad1836
+                        Type: !LightSkybox
+                            Skybox: d97a05d4-10c1-4924-a701-21d3d49212fc:Skybox
+        -   Entity:
+                Id: a93b7110-d065-4738-8e79-df379abff061
+                Name: Main Camera
+                Components:
+                    af269f75830473dd3f10d74aac787e98: !TransformComponent
+                        Id: 8ba71b3d-eee2-47c7-8caf-edc66e68a403
+                        Position: {X: 4.8467245, Y: 13.600513, Z: 9.586313}
+                        Rotation: {X: -0.2157243, Y: 0.3105553, Z: 0.072590895, W: 0.92290246}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    8812e2fb48397c2b4cb490a89525c1ea: !CameraComponent
+                        Id: ed7f6565-63d4-42de-87c3-7b7535bec520
+                        Name: null
+                        Projection: Perspective
+                        Slot: 26e94fa5-f5e4-4223-94b8-ae529def1b3b
+                    559fc28fa9f654c45529cd53c1d2e337: !Operation_HarmonyShift.BasicCameraController,Operation_HarmonyShift
+                        Id: 52d4423c-9cc1-4e39-84bd-63d44c92f527
+                        Gamepad: false
+                        KeyboardMovementSpeed: {X: 5.0, Y: 5.0, Z: 5.0}
+                        TouchMovementSpeed: {X: 0.7, Y: 0.7, Z: 0.3}
+                        SpeedFactor: 5.0
+                        KeyboardRotationSpeed: {X: 3.0, Y: 3.0}
+                        MouseRotationSpeed: {X: 1.0, Y: 1.0}
+                        TouchRotationSpeed: {X: 1.0, Y: 0.7}
+        -   Entity:
+                Id: b3c3ce7e-d1df-4d4d-bbb5-74a40f002f6a
+                Name: Directional light
+                Components:
+                    d9dc028178e28b29733db4e89a6ea13e: !TransformComponent
+                        Id: 6fac23c7-fd4c-47cf-8059-d3ce659620ab
+                        Position: {X: 0.0, Y: 2.0, Z: 0.0}
+                        Rotation: {X: 1.131334E-08, Y: -0.9659258, Z: -0.25881904, W: -4.222196E-08}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    462e598f0ba67c68e671a6b49b225d30: !LightComponent
+                        Id: 85f580e7-f713-404c-831e-4a3e2de9d566
+                        Type: !LightDirectional
+                            Color: !ColorRgbProvider
+                                Value: {R: 1.0, G: 1.0, B: 1.0}
+                            Shadow:
+                                Enabled: true
+                                Filter: !LightShadowMapFilterTypePcf
+                                    FilterSize: Filter5x5
+                                Size: Large
+                                DepthRange: {}
+                                PartitionMode: !LightDirectionalShadowMap.PartitionLogarithmic {}
+                                ComputeTransmittance: false
+                                BiasParameters: {}
+                        Intensity: 20.0
+        -   Entity:
+                Id: f2097d6c-1fb9-427a-8cf2-b61201fa1d29
+                Name: WorldGameFactory
+                Components:
+                    50f5146774f000253035f44a019358e4: !TransformComponent
+                        Id: 72860c48-6426-407f-bbd7-fae17bc44d58
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    37f1b52472855698a610198ca85a4c0c: !StrideProceduralModel.WorldGameFactory,Operation_HarmonyShift
+                        Id: 4c297967-e3ba-44f6-808f-9a407c658801
+                        World Seed: 12022111
+                        Chunk Size: 64
+                        World Size: 5
+                        worldMaterial: fdf43ca3-a88c-4246-b0ee-417f1a410b99:Models/Material
+                        BlockScale: {X: 0.25, Y: 0.25, Z: 0.25}
