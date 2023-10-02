@@ -3,11 +3,15 @@ using Stride.Core.Annotations;
 using Stride.Core.Diagnostics;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using Stride.Rendering;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using WorldBuilding;
 using WorldBuilding.Enums;
+using WorldBuilding.Helpers;
+using WorldBuilding.WorldDefinitions;
 using WorldBuilding.WorldModel;
 
 namespace Operation_HarmonyShift.GameWorld
@@ -20,20 +24,28 @@ namespace Operation_HarmonyShift.GameWorld
         public int WorldSeed { get; set; } = 12022111;
 
         [DataMemberRange(1, 64, 1, 10, 0)]
-        [DataMember(5, "Chunk Size")]
+        [DataMember(5, "Chunk Size in Blocks")]
         public short ChunkSize { get; set; } = 1;
 
         [DataMemberRange(1, 20, 1, 1, 0)]
-        [DataMember(5, "World Size")]
+        [DataMember(5, "World Size in Chunks")]
         //9x9 is the maximum number of chunks available as of now before the indices values go beyond what an int can hold
         public short WorldSize { get; set; } = 1;
+
+        [DataMemberRange(1, 512, 1, 1, 0)]
+        [DataMember(5, "World Height in Blocks")]
+        //9x9 is the maximum number of chunks available as of now before the indices values go beyond what an int can hold
+        public short WorldHeight { get; set; } = 1;
+
+        [DataMember(6, "Cube Materials")]
+        public Dictionary<BlockType, Material> WorldMaterials = new();
 
         public Vector3 BlockScale { get; set; }
 
         private World worldDescriptor = null;
         private GameWorldModelRenderer GameWorldModel;
-        private readonly List<Vector3> vertices = new();
-        private readonly List<int> indices = new();
+        private readonly Dictionary<BlockType, List<VertexPositionNormal>> verticesCollection = new();
+        private readonly Dictionary<BlockType, List<int>> indicesCollection = new();
         private bool Init = false;
 
         //readonly ProfilingKey UpdateModelProfilingKey = new("Update My Model");
@@ -64,7 +76,7 @@ namespace Operation_HarmonyShift.GameWorld
         {
             //Generating world from parameters given coords
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
-            var worldTask = Task.Run(() => WorldGenerator.GenerateWorld(WorldSeed, WorldSize, 1, ChunkSize, Log));
+            var worldTask = Task.Run(() => WorldGenerator.GenerateWorld(WorldSeed, WorldSize, (short)(WorldHeight / ChunkSize), ChunkSize, Log));
 
             await worldTask.ContinueWith((newGameWorld) =>
             {
@@ -80,7 +92,13 @@ namespace Operation_HarmonyShift.GameWorld
                         chunkBlock.Value.TranslateBlock(new Vector3(worldChunk.Value.ChunkCoords.X * BlockScale.X, worldChunk.Value.ChunkCoords.Y * BlockScale.Y, worldChunk.Value.ChunkCoords.Z * BlockScale.Z) * ChunkSize);
                         if (chunkBlock.Value.IsTerrain)
                         {
-                            CreateBlockFaces(chunkBlock.Value);
+                            BlockType currentBlockType = chunkBlock.Value.GetBlockType();
+                            if (!verticesCollection.ContainsKey(currentBlockType))
+                            {
+                                verticesCollection.Add(currentBlockType, new List<VertexPositionNormal>());
+                                indicesCollection.Add(currentBlockType, new List<int>());
+                            }
+                            CreateBlockFaces(chunkBlock.Value, verticesCollection[currentBlockType], indicesCollection[currentBlockType]);
                         }
                     }
                     Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
@@ -93,7 +111,7 @@ namespace Operation_HarmonyShift.GameWorld
             {
                 // The model classes
                 Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Sending world mesh to the primitive procedural model base");
-                GameWorldModel = new GameWorldModelRenderer(Entity, vertices, indices);
+                GameWorldModel = new GameWorldModelRenderer(Entity, WorldMaterials, verticesCollection, indicesCollection);
                 GameWorldModel.Start();
             });
         }
@@ -114,12 +132,12 @@ namespace Operation_HarmonyShift.GameWorld
         //    myModel.Generate(Services, modelComponent.Model);
         //}
 
-        protected void CreateBlockFaces(Block currentBlock)
+        protected static void CreateBlockFaces(Block currentBlock, List<VertexPositionNormal> vertices, List<int> indices)
         {
             //Add each of the cubes vertices to the mesh of the array a single time
             for (int i = 0; i < currentBlock.vertices.Count; i++)
             {
-                vertices.Add(currentBlock.vertices[i]);
+                vertices.Add(new VertexPositionNormal(currentBlock.vertices[i], NormalsHelper.Normal[i]));
             }
 
             foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
@@ -128,16 +146,16 @@ namespace Operation_HarmonyShift.GameWorld
 
                 if (neighborBlock != null && !neighborBlock.IsTerrain)
                 {
-                    CreateFace(currentBlock.GetFaceVertices(face), face);
+                    CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
                 }
                 else if (neighborBlock == null)
                 {
-                    CreateFace(currentBlock.GetFaceVertices(face), face);
+                    CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
                 }
             }
         }
 
-        protected void CreateFace(List<Vector3> faceVertices, FaceSide face)
+        protected static void CreateFace(List<Vector3> faceVertices, FaceSide face, List<VertexPositionNormal> vertices, List<int> indices)
         {
             int firstVertex = vertices.Count - 8;
             switch (face)
@@ -146,28 +164,28 @@ namespace Operation_HarmonyShift.GameWorld
                 case FaceSide.Right:
                 case FaceSide.Bottom:
                     //First Triangle
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[0]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[2]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[1]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
 
                     //Second Triangle              
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[1]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[2]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[3]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
                     break;
 
                 case FaceSide.Front:
                 case FaceSide.Left:
                 case FaceSide.Top:
                     //First Triangle               
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[0]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[1]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[3]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
 
                     //Second Triangle              
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[0]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[3]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v == faceVertices[2]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
                     break;
             }
         }

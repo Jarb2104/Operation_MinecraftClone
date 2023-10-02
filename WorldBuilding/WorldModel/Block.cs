@@ -1,4 +1,7 @@
-﻿using Stride.Core.Mathematics;
+﻿using Silk.NET.Core;
+using Stride.Core.Mathematics;
+using System.ComponentModel.Design;
+using System.Reflection.Metadata.Ecma335;
 using WorldBuilding.Enums;
 
 namespace WorldBuilding.WorldModel
@@ -34,6 +37,21 @@ namespace WorldBuilding.WorldModel
                 vertices[i] += BlockCoords;
             }
         }
+        public void TranslateBlock(Vector3 offSet)
+        {
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                vertices[i] = vertices[i] + offSet;
+            }
+        }
+
+        public void ScaleBlock(Vector3 scale)
+        {
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                vertices[i] = vertices[i] * scale;
+            }
+        }
 
         public List<Vector3> GetFaceVertices(FaceSide side)
         {
@@ -63,19 +81,22 @@ namespace WorldBuilding.WorldModel
             return resultVertices;
         }
 
-        public void TranslateBlock(Vector3 offSet)
+        public BlockType GetBlockType()
         {
-            for (int i = 0; i < vertices.Count; i++)
+            BlockType result = BlockType.Grass;
+            switch (Biome)
             {
-                vertices[i] = vertices[i] + offSet;
-            }
-        }
-
-        public void ScaleBlock(Vector3 scale)
-        {
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                vertices[i] = vertices[i] * scale;
+                case Biome.Plains:
+                    result = (vertices[0].Y) switch
+                    {
+                        >= 40 => BlockType.Snow,
+                        >= 30 and < 40 => BlockType.Rock,
+                        >= 20 and < 30 => BlockType.Grass,
+                        >= 10 and < 20 => BlockType.Dirt,
+                        _ => BlockType.Grass,
+                    };
+                    return result;
+                default: return result;
             }
         }
     }
