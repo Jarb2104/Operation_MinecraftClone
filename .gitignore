@@ -1,11 +1,14 @@
 
-*.dll
-*.pdb
-*.v2
-*.vsidx
-*.vsidx
-*.v2
-.vs/Operation_HarmonyShift/v17/.suo
-*.bin
-/WorldBuilding/obj
-/WorldBuilding/bin/Debug/net6.0
+*.user
+*.lock
+*.lock.json
+.vs/
+_ReSharper*
+*.suo
+*.VC.db
+*.vshost.exe
+*.manifest
+*.sdf
+[Bb]in/
+obj/
+Cache/

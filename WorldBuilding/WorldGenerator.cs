@@ -5,17 +5,12 @@ namespace WorldBuilding
 {
     public class WorldGenerator
     {
-        private readonly Logger Log = null!;
-        public WorldGenerator(Logger logger)
+        public static async Task<World> GenerateWorld(int seed, short worldSize, short worldHeight, short chunkSize, Logger Log)
         {
-            Log = logger;
-        }
-
-        public async Task<World> GenerateWorld(int seed, short worldSize, short worldHeight, short chunkSize)
-        {
-            World newWorld = new(seed, worldSize, worldHeight, chunkSize, Log);
-            Log.Info("Start generating chunks");
-            await newWorld.GenerateWorldChunks();
+            Log.Debug($"{DateTime.Now.ToLongTimeString} | Starting with world creation");
+            Log.Verbose($"{DateTime.Now.ToLongTimeString} | Seed: {seed} - WorldSize: {worldSize} - WorldHeight: {worldHeight} - ChunkSize: {chunkSize} ");
+            World newWorld = new(seed, worldSize, worldHeight, chunkSize);
+            await newWorld.GenerateWorldChunks(Log);
             return newWorld;
         }
     }

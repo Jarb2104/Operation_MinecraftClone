@@ -13,21 +13,18 @@ namespace WorldBuilding.WorldModel
         public short Height { get; }
         public short ChunkSize { get; }
         public readonly Dictionary<Vector3, Chunk> worldChunks = null!;
-        protected Logger Log { get; }
 
-        public World(int worldSeed, short worldSize, short worldHeight, short chunkSize, Logger logger)
+        public World(int worldSeed, short worldSize, short worldHeight, short chunkSize)
         {
             WorldSeed = worldSeed;
             WorldSize = worldSize;
             Height = worldHeight;
             ChunkSize = chunkSize;
             worldChunks = new Dictionary<Vector3, Chunk>();
-            Log = logger;
         }
 
-        public async Task GenerateWorldChunks()
+        public async Task GenerateWorldChunks(Logger Log)
         {
-            Log.Info("Start chunk creation");
             for (short i = 0; i < WorldSize; i++)
             {
                 for (short j = 0; j < Height; j++)
@@ -35,16 +32,14 @@ namespace WorldBuilding.WorldModel
                     for (short k = 0; k < WorldSize; k++)
                     {
                         Vector3 v = new(i, j, k);
-                        Log.Info($"Chunk Vector: {v}");
                         worldChunks.Add(v, new Chunk(this, i, j, k, ChunkSize));
+                        Log.Info($"{DateTime.Now.ToLongTimeString} | Chunk {v} created and ready to be generated.");
                     }
                 }
             }
             
-            Log.Info("Starting blocks generation");
             await Task.WhenAll(worldChunks.Select(ck => ck.Value.GenerateTerrain(WorldSeed, Log)));
-
-            Log.Info("All chunks completed?");
+            Log.Verbose($"{DateTime.Now.ToLongTimeString} | All world chunks generated");
         }
 
         public Chunk? GetChunkNeighbor(Vector3 chunkCoords, FaceSide face)

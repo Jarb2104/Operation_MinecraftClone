@@ -34,6 +34,7 @@ namespace WorldBuilding.WorldModel
 
             await Task.Run(() =>
             {
+                Log.Warning($"{DateTime.Now.ToLongTimeString} | Generating chunk {ChunkCoords}");
                 for (short i = 0; i < Length; i++)
                 {
                     for (short j = 0; j < Width; j++)
@@ -59,8 +60,7 @@ namespace WorldBuilding.WorldModel
                         }
                     }
                 }
-
-                Log.Info($"Chunk {ChunkCoords} completed generation");
+                Log.Info($"{DateTime.Now.ToLongTimeString} | Chunk {ChunkCoords} finished generating");
             });
         }
 

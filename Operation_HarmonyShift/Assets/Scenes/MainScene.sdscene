@@ -1,0 +1,130 @@
+!SceneAsset
+Id: 8e310982-d08d-4437-aec5-3888c5f802d3
+SerializedVersion: {Stride: 3.1.0.1}
+Tags: []
+ChildrenIds: []
+Offset: {X: 0.0, Y: 0.0, Z: 0.0}
+Hierarchy:
+    RootParts:
+        - ref!! 885cd19a-2a09-46e2-976d-bc686cb07673
+        - ref!! 23252fee-dc58-44a8-a505-873e5a4e19ce
+        - ref!! 984d9c09-e349-470d-adf0-ad6b969b893e
+        - ref!! 15252349-b015-45f6-9d8b-880ba5e18c6e
+        - ref!! 69294287-a946-4668-aba8-10e67cac5304
+        - ref!! 8caf3314-d0bf-4d4b-b86d-d17bf862e56c
+    Parts:
+        -   Entity:
+                Id: 15252349-b015-45f6-9d8b-880ba5e18c6e
+                Name: Sphere
+                Components:
+                    b574f26bbcf1d742f91f1f3433048175: !TransformComponent
+                        Id: 610790bd-7920-43b1-a19e-340c8acbb0bf
+                        Position: {X: 0.0, Y: 3.2298238, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    8fa6be7154409b7cfb126d33e0d9d4bc: !ModelComponent
+                        Id: 49bbeb80-61a8-4812-8b6b-10279b0d5b26
+                        Model: bd541993-57df-4833-ba59-6618af878633:Models/Sphere
+                        Materials: {}
+        -   Entity:
+                Id: 23252fee-dc58-44a8-a505-873e5a4e19ce
+                Name: Directional light
+                Components:
+                    da024875f1a2b9950e53292a1ee78606: !TransformComponent
+                        Id: ea7b56fe-a069-4322-98d2-1c358af40d6c
+                        Position: {X: 0.0, Y: 5.0, Z: 0.0}
+                        Rotation: {X: 1.131334E-08, Y: -0.9659258, Z: -0.25881904, W: -4.222196E-08}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    c270deab9ad6e11e9ffc1bb40053de98: !LightComponent
+                        Id: 7d595b77-0049-4eb6-a10f-7987f31cc6ed
+                        Type: !LightDirectional
+                            Color: !ColorRgbProvider
+                                Value: {R: 1.0, G: 1.0, B: 1.0}
+                            Shadow:
+                                Enabled: true
+                                Filter: !LightShadowMapFilterTypePcf
+                                    FilterSize: Filter5x5
+                                Size: Large
+                                DepthRange: {}
+                                PartitionMode: !LightDirectionalShadowMap.PartitionLogarithmic {}
+                                ComputeTransmittance: false
+                                BiasParameters: {}
+                        Intensity: 20.0
+        -   Entity:
+                Id: 69294287-a946-4668-aba8-10e67cac5304
+                Name: GameProfiler
+                Components:
+                    75e5db793425002174087f3d19864160: !TransformComponent
+                        Id: 16dfc106-2931-437b-aa2c-92a94a5af707
+                        Position: {X: 0.0, Y: 0.6002686, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    b4920a064f769802061c60de2ffa0cd0: !Operation_HarmonyShift.StrideHelpers.GameProfiler,Operation_HarmonyShift
+                        Id: 4e709d7d-3cf2-480c-bb61-15dacb4cbe03
+                        Enabled: true
+                        TextColor: {R: 144, G: 238, B: 144, A: 255}
+                        RefreshTime: 500.0
+                        SortingMode: ByTime
+                        FilteringMode: Fps
+                        ResultPage: 1
+        -   Entity:
+                Id: 885cd19a-2a09-46e2-976d-bc686cb07673
+                Name: Camera
+                Components:
+                    31130025352f672bcf59bc8aeead6d78: !TransformComponent
+                        Id: 405514b2-04ba-4f7f-a7fd-55ce021e2dea
+                        Position: {X: 13.096805, Y: 4.7143965, Z: -5.226317}
+                        Rotation: {X: 0.0, Y: 0.82903755, Z: 0.0, W: 0.5591929}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    e0d307eb7f4528b761d6a1ff8d5e2bd8: !CameraComponent
+                        Id: 5b53c5ae-461d-4b69-b784-0085cc77a169
+                        Name: null
+                        Projection: Perspective
+                        Slot: 5d214f51-696d-4f75-a3b8-3f8bcdbce99e
+                    f62272d74aecd4101fb9b1a71b3168c2: !Operation_HarmonyShift.StrideHelpers.BasicCameraController,Operation_HarmonyShift
+                        Id: 640a3d33-ae7c-4e6a-b00d-2dc9d6e60047
+                        Gamepad: false
+                        KeyboardMovementSpeed: {X: 5.0, Y: 5.0, Z: 5.0}
+                        TouchMovementSpeed: {X: 0.7, Y: 0.7, Z: 0.3}
+                        SpeedFactor: 5.0
+                        KeyboardRotationSpeed: {X: 3.0, Y: 3.0}
+                        MouseRotationSpeed: {X: 1.0, Y: 1.0}
+                        TouchRotationSpeed: {X: 1.0, Y: 0.7}
+        -   Folder: Entities/WorldEntities
+            Entity:
+                Id: 8caf3314-d0bf-4d4b-b86d-d17bf862e56c
+                Name: GameWorld
+                Components:
+                    4dc3d9569d2c78eacc4f897b330c83f7: !TransformComponent
+                        Id: a3f2a8fd-ed1f-40a2-97ba-7dcd7645e504
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    e14abe42de2e4bff89f63c72ca857fea: !Operation_HarmonyShift.GameWorld.GameWorldFactory,Operation_HarmonyShift
+                        Id: 7b0507b7-cbf5-481c-92e4-f24fc3acad2c
+                        World Seed: 12022111
+                        Chunk Size: 1
+                        World Size: 1
+                        BlockScale: {X: 1.0, Y: 1.0, Z: 1.0}
+        -   Entity:
+                Id: 984d9c09-e349-470d-adf0-ad6b969b893e
+                Name: Skybox
+                Components:
+                    a8bcba8b0b5750ef17fa1169ff6a0731: !TransformComponent
+                        Id: d6a60b64-8bbc-4501-9364-18d9de36fd8b
+                        Position: {X: 0.0, Y: 2.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    0e83197354a00af6553a044c8ddae711: !BackgroundComponent
+                        Id: cc44d592-dfe1-49b9-9625-e7fecca2a289
+                        Texture: f120e4dd-3e2a-43af-8e6e-6d7a1d669c49:Materials/Textures/Skybox texture
+                    26550310a76ec13415bf5da89beea657: !LightComponent
+                        Id: fe291188-6e73-474e-b8bb-9f2d8811526f
+                        Type: !LightSkybox
+                            Skybox: f1bccbfa-8ea5-42b9-8093-d2bc5c43a5fb:Other/Skybox

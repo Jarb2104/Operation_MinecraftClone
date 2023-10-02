@@ -1,13 +1,13 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 16.0.0.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift.Windows", "MainGame\Operation_HarmonyShift\Operation_HarmonyShift.Windows\Operation_HarmonyShift.Windows.csproj", "{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift.Windows", "Operation_HarmonyShift.Windows\Operation_HarmonyShift.Windows.csproj", "{B4DABB33-0DD0-4791-888E-0454553678DD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift", "MainGame\Operation_HarmonyShift\Operation_HarmonyShift\Operation_HarmonyShift.csproj", "{1C9474C4-DC48-438F-970D-5D9AEBD90250}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Operation_HarmonyShift", "Operation_HarmonyShift\Operation_HarmonyShift.csproj", "{0E385A4A-F23D-419F-A688-37E7FA259DE9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldBuilding", "WorldBuilding\WorldBuilding.csproj", "{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldBuilding", "WorldBuilding\WorldBuilding.csproj", "{F24AE8DF-483B-4B2A-B583-A3D9B09737AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,20 +15,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5A5A3BE3-5FB5-408A-8DCE-7EC1BF4A0131}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C9474C4-DC48-438F-970D-5D9AEBD90250}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35B6E0A1-3D64-45C8-8B6B-30B97BB2BDB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4DABB33-0DD0-4791-888E-0454553678DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4DABB33-0DD0-4791-888E-0454553678DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4DABB33-0DD0-4791-888E-0454553678DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4DABB33-0DD0-4791-888E-0454553678DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E385A4A-F23D-419F-A688-37E7FA259DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E385A4A-F23D-419F-A688-37E7FA259DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E385A4A-F23D-419F-A688-37E7FA259DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E385A4A-F23D-419F-A688-37E7FA259DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F24AE8DF-483B-4B2A-B583-A3D9B09737AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F24AE8DF-483B-4B2A-B583-A3D9B09737AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F24AE8DF-483B-4B2A-B583-A3D9B09737AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F24AE8DF-483B-4B2A-B583-A3D9B09737AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EB3EB354-FE22-4643-B0F4-FBD287671378}
 	EndGlobalSection
 EndGlobal

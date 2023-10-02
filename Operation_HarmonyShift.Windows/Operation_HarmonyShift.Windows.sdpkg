@@ -1,0 +1,19 @@
+!Package
+SerializedVersion: {Assets: 3.1.0.0}
+Meta:
+    Name: Operation_HarmonyShift.Windows
+    Version: 1.0.0
+    Authors: []
+    Owners: []
+    Dependencies: null
+AssetFolders:
+    -   Path: !dir Assets
+ResourceFolders:
+    - !dir Resources
+OutputGroupDirectories: {}
+ExplicitFolders: []
+Bundles: []
+TemplateFolders: []
+RootAssets:
+    - a1cd49b0-501e-45e9-a005-2045c843a4b1:Materials/Dirt
+    - d74d61e2-d73e-4ffa-811f-c5df5e292c15:Materials/Grass
