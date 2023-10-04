@@ -23,7 +23,7 @@ namespace WorldBuilding.WorldModel
             worldChunks = new Dictionary<Vector3, Chunk>();
         }
 
-        public async Task GenerateWorldChunks(Logger Log)
+        public void CreateWorldChunks(Logger Log)
         {
             for (short i = 0; i < WorldSize; i++)
             {
@@ -33,20 +33,26 @@ namespace WorldBuilding.WorldModel
                     {
                         Vector3 v = new(i, j, k);
                         worldChunks.Add(v, new Chunk(this, i, j, k, ChunkSize));
-                        Log.Info($"{DateTime.Now.ToLongTimeString} | Chunk {v} created and ready to be generated.");
+                        Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {v} created and ready to be generated.");
                     }
                 }
             }
             
-            await Task.WhenAll(worldChunks.Select(ck => ck.Value.GenerateTerrain(WorldSeed, Log)));
-            Log.Verbose($"{DateTime.Now.ToLongTimeString} | All world chunks generated");
+            Log.Verbose($"{DateTime.Now.ToLongTimeString()} | All world chunks generated");
+        }
+
+        public async Task GenerateChunkTerrain(Vector3 chunkCoords, float blockScale, Logger Log)
+        {
+            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation started");
+            await Task.Run(() => worldChunks[chunkCoords].GenerateTerrain(WorldSeed, blockScale, Log));
+            Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation finished");
         }
 
         public Chunk? GetChunkNeighbor(Vector3 chunkCoords, FaceSide face)
         {
             if (worldChunks.ContainsKey(chunkCoords))
             {
-                Vector3 neighborCoords = chunkCoords + NeighborsHelper.Neighbor[(short)face];
+                Vector3 neighborCoords = chunkCoords + CubeHelpers.Neighbors[(short)face];
                 if (worldChunks.ContainsKey(neighborCoords))
                 {
                     return (Chunk?)worldChunks[neighborCoords];

@@ -27,15 +27,15 @@ Hierarchy:
                     0afbfa5641d65246cad8c8f6be5e9c18: !Operation_HarmonyShift.GameWorld.GameWorldFactory,Operation_HarmonyShift
                         Id: ea87db8e-8622-42c0-bfdb-b78ddc274426
                         World Seed: 12022111
-                        Chunk Size in Blocks: 15
-                        World Size in Chunks: 3
-                        World Height in Blocks: 75
+                        Chunk Size in Blocks: 39
+                        World Size in Chunks: 13
+                        World Height in Blocks: 351
                         Cube Materials:
                             45f0ff40e3abf4f2cf14e13e25fc16cf~Dirt: a1cd49b0-501e-45e9-a005-2045c843a4b1:Materials/Dirt
                             55eda114733b544e6023facf14f3c2f3~Grass: d74d61e2-d73e-4ffa-811f-c5df5e292c15:Materials/Grass
                             6d5f4fd27ddadee74aeb43a9a34b0c29~Rock: ed2cf423-fa1b-4224-ac08-93cab6250e05:Materials/Rock
                             0fe88cae8f9a368193a158375dd0ad7a~Snow: 4fcf090a-a50a-4c63-9602-c835aa9c89c0:Materials/Snow
-                        BlockScale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        BlockScale: {X: 0.25, Y: 0.25, Z: 0.25}
         -   Entity:
                 Id: 15252349-b015-45f6-9d8b-880ba5e18c6e
                 Name: Sphere

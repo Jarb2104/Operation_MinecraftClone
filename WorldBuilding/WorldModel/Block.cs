@@ -1,8 +1,6 @@
-﻿using Silk.NET.Core;
-using Stride.Core.Mathematics;
-using System.ComponentModel.Design;
-using System.Reflection.Metadata.Ecma335;
+﻿using Stride.Core.Mathematics;
 using WorldBuilding.Enums;
+using WorldBuilding.Helpers;
 
 namespace WorldBuilding.WorldModel
 {
@@ -11,51 +9,28 @@ namespace WorldBuilding.WorldModel
         public Vector3 BlockCoords { get; }
         public Biome Biome { get; set; }
         public bool IsTerrain { get; set; }
+        public float BlockScale { get; }
         public Chunk ParentChunk { get; }
 
-        public readonly List<Vector3> vertices = new()
+        public Block(Chunk parentChunk, float x, float y, float z, Biome biome, bool isTerrain, float blockScale)
         {
-            new Vector3(-0.5f, -0.5f, -0.5f),
-            new Vector3( 0.5f, -0.5f, -0.5f),
-            new Vector3(-0.5f,  0.5f, -0.5f),
-            new Vector3( 0.5f,  0.5f, -0.5f),
-            new Vector3(-0.5f, -0.5f,  0.5f),
-            new Vector3( 0.5f, -0.5f,  0.5f),
-            new Vector3(-0.5f,  0.5f,  0.5f),
-            new Vector3( 0.5f,  0.5f,  0.5f)
-        };
-
-        public Block(Chunk parentChunk, short x, short y, short z, Biome biome, bool isTerrain)
-        {
-            ParentChunk = parentChunk;
             BlockCoords = new Vector3(x, y, z);
             Biome = biome;
             IsTerrain = isTerrain;
-
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                vertices[i] += BlockCoords;
-            }
-        }
-        public void TranslateBlock(Vector3 offSet)
-        {
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                vertices[i] = vertices[i] + offSet;
-            }
+            BlockScale = blockScale;
+            ParentChunk = parentChunk;
         }
 
-        public void ScaleBlock(Vector3 scale)
+        public List<Vector3> GetVertices()
         {
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                vertices[i] = vertices[i] * scale;
-            }
+            return CubeHelpers.Vertices.Select(v => v * BlockScale + BlockCoords * BlockScale + ParentChunk.ChunkCoords * ParentChunk.ChunkSize * BlockScale).ToList();
         }
 
         public List<Vector3> GetFaceVertices(FaceSide side)
         {
             List<Vector3> resultVertices = null!;
+            List<Vector3> vertices = GetVertices();
+
             switch (side)
             {
                 case FaceSide.Front:
@@ -83,6 +58,7 @@ namespace WorldBuilding.WorldModel
 
         public BlockType GetBlockType()
         {
+            List<Vector3> vertices = GetVertices();
             BlockType result = BlockType.Grass;
             switch (Biome)
             {

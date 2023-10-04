@@ -7,6 +7,7 @@ using Stride.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WorldBuilding;
 using WorldBuilding.Enums;
@@ -72,40 +73,16 @@ namespace Operation_HarmonyShift.GameWorld
             //}
         }
 
-        async Task CreateGameWorldMesh()
+        private async Task CreateGameWorldMesh()
         {
             //Generating world from parameters given coords
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
-            var worldTask = Task.Run(() => WorldGenerator.GenerateWorld(WorldSeed, WorldSize, (short)(WorldHeight / ChunkSize), ChunkSize, Log));
+            worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, WorldSize, (short)(WorldHeight / ChunkSize), ChunkSize, Log);
 
-            await worldTask.ContinueWith((newGameWorld) =>
-            {
-                worldDescriptor = newGameWorld.Result;
-
-                Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world mesh");
-                foreach (KeyValuePair<Vector3, Chunk> worldChunk in worldDescriptor.worldChunks)
-                {
-                    foreach (KeyValuePair<Vector3, Block> chunkBlock in worldChunk.Value.chunkBlocks)
-                    {
-                        //Transform the vertices in the cube to accuratly reflect position and scale of the chunk
-                        chunkBlock.Value.ScaleBlock(BlockScale);
-                        chunkBlock.Value.TranslateBlock(new Vector3(worldChunk.Value.ChunkCoords.X * BlockScale.X, worldChunk.Value.ChunkCoords.Y * BlockScale.Y, worldChunk.Value.ChunkCoords.Z * BlockScale.Z) * ChunkSize);
-                        if (chunkBlock.Value.IsTerrain)
-                        {
-                            BlockType currentBlockType = chunkBlock.Value.GetBlockType();
-                            if (!verticesCollection.ContainsKey(currentBlockType))
-                            {
-                                verticesCollection.Add(currentBlockType, new List<VertexPositionNormal>());
-                                indicesCollection.Add(currentBlockType, new List<int>());
-                            }
-                            CreateBlockFaces(chunkBlock.Value, verticesCollection[currentBlockType], indicesCollection[currentBlockType]);
-                        }
-                    }
-                    Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
-                }
-
-                Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh");
-            });
+            Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world mesh");
+            List<Task> chunksGeneration = worldDescriptor.worldChunks.Select(ck => CreateGameChunkMesh(ck)).ToList();
+            await Task.WhenAll(chunksGeneration);
+            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh");
 
             await Task.Run(() =>
             {
@@ -114,6 +91,36 @@ namespace Operation_HarmonyShift.GameWorld
                 GameWorldModel = new GameWorldModelRenderer(Entity, WorldMaterials, verticesCollection, indicesCollection);
                 GameWorldModel.Start();
             });
+        }
+
+        private async Task CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
+        {
+            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation started");
+            await worldChunk.Value.GenerateTerrain(WorldSeed, BlockScale.X, Log);
+            Log.Verbose($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation finished");
+
+            CreateGameBlockMesh(worldChunk.Value.chunkBlocks);
+
+            Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
+        }
+
+        private void CreateGameBlockMesh(Dictionary<Vector3, Block> chunkBlocks)
+        {
+            Span<Block> blocks = chunkBlocks.Select(vb => vb.Value).ToArray();
+            foreach (Block chunkBlock in blocks)
+            {
+                //Transform the vertices in the cube to accuratly reflect position and scale of the chunk
+                if (chunkBlock.IsTerrain)
+                {
+                    BlockType currentBlockType = chunkBlock.GetBlockType();
+                    if (!verticesCollection.ContainsKey(currentBlockType))
+                    {
+                        verticesCollection.Add(currentBlockType, new List<VertexPositionNormal>());
+                        indicesCollection.Add(currentBlockType, new List<int>());
+                    }
+                    CreateBlockFaces(chunkBlock, verticesCollection[currentBlockType], indicesCollection[currentBlockType]);
+                }
+            }
         }
 
         //void UpdateMyModel()
@@ -132,30 +139,29 @@ namespace Operation_HarmonyShift.GameWorld
         //    myModel.Generate(Services, modelComponent.Model);
         //}
 
-        protected static void CreateBlockFaces(Block currentBlock, List<VertexPositionNormal> vertices, List<int> indices)
+        private static void CreateBlockFaces(Block currentBlock, List<VertexPositionNormal> vertices, List<int> indices)
         {
             //Add each of the cubes vertices to the mesh of the array a single time
-            for (int i = 0; i < currentBlock.vertices.Count; i++)
+            List<Vector3> blockVertices = currentBlock.GetVertices();
+            Block neighborBlock;
+            for (int i = 0; i < blockVertices.Count; i++)
             {
-                vertices.Add(new VertexPositionNormal(currentBlock.vertices[i], NormalsHelper.Normal[i]));
+                vertices.Add(new VertexPositionNormal(blockVertices[i], CubeHelpers.Normals[i]));
             }
 
             foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
             {
-                Block neighborBlock = currentBlock.ParentChunk.GetNeighbor(currentBlock.BlockCoords, face);
+                neighborBlock = currentBlock.ParentChunk.GetNeighbor(currentBlock.BlockCoords, face);
+                neighborBlock ??= currentBlock.ParentChunk.GetNeighborFromNeighborChunk(currentBlock.BlockCoords, face);
 
                 if (neighborBlock != null && !neighborBlock.IsTerrain)
-                {
-                    CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
-                }
-                else if (neighborBlock == null)
                 {
                     CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
                 }
             }
         }
 
-        protected static void CreateFace(List<Vector3> faceVertices, FaceSide face, List<VertexPositionNormal> vertices, List<int> indices)
+        private static void CreateFace(List<Vector3> faceVertices, FaceSide face, List<VertexPositionNormal> vertices, List<int> indices)
         {
             int firstVertex = vertices.Count - 8;
             switch (face)
