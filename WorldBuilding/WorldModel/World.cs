@@ -11,15 +11,19 @@ namespace WorldBuilding.WorldModel
         public int WorldSeed { get; }
         public short WorldSize { get; }
         public short Height { get; }
-        public short ChunkSize { get; }
+        public sbyte ChunkWidthSize { get; }
+        public sbyte ChunkLengthSize { get; }
+        public sbyte ChunkHeightSize { get; }
         public readonly Dictionary<Vector3, Chunk> worldChunks = null!;
 
-        public World(int worldSeed, short worldSize, short worldHeight, short chunkSize)
+        public World(int worldSeed, short worldSize, short worldHeight, sbyte chunkWidthSize, sbyte chunkLengthSize)
         {
             WorldSeed = worldSeed;
             WorldSize = worldSize;
-            Height = worldHeight;
-            ChunkSize = chunkSize;
+            Height = (short)Math.Ceiling((decimal)worldHeight / worldSize);
+            ChunkWidthSize = chunkWidthSize;
+            ChunkLengthSize = chunkLengthSize;
+            ChunkHeightSize = (sbyte)Math.Ceiling((decimal)worldHeight / Height);
             worldChunks = new Dictionary<Vector3, Chunk>();
         }
 
@@ -32,19 +36,19 @@ namespace WorldBuilding.WorldModel
                     for (short k = 0; k < WorldSize; k++)
                     {
                         Vector3 v = new(i, j, k);
-                        worldChunks.Add(v, new Chunk(this, i, j, k, ChunkSize));
+                        worldChunks.Add(v, new Chunk(this, i, j, k, ChunkWidthSize, ChunkLengthSize, ChunkHeightSize));
                         Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {v} created and ready to be generated.");
                     }
                 }
             }
-            
+
             Log.Verbose($"{DateTime.Now.ToLongTimeString()} | All world chunks generated");
         }
 
         public async Task GenerateChunkTerrain(Vector3 chunkCoords, float blockScale, Logger Log)
         {
             Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation started");
-            await Task.Run(() => worldChunks[chunkCoords].GenerateTerrain(WorldSeed, blockScale, Log));
+            await worldChunks[chunkCoords].GenerateTerrain(WorldSeed, blockScale, Log);
             Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation finished");
         }
 
@@ -52,10 +56,13 @@ namespace WorldBuilding.WorldModel
         {
             if (worldChunks.ContainsKey(chunkCoords))
             {
-                Vector3 neighborCoords = chunkCoords + CubeHelpers.Neighbors[(short)face];
-                if (worldChunks.ContainsKey(neighborCoords))
+                Vector3 neighBorCoords = new(
+                    chunkCoords.X + CubeHelpers.BlockNeighbors[(short)face].X,
+                    chunkCoords.Y + CubeHelpers.BlockNeighbors[(short)face].Y,
+                    chunkCoords.Z + CubeHelpers.BlockNeighbors[(short)face].Z);
+                if (worldChunks.ContainsKey(neighBorCoords))
                 {
-                    return (Chunk?)worldChunks[neighborCoords];
+                    return (Chunk?)worldChunks[neighBorCoords];
                 }
                 else
                 {
@@ -64,7 +71,7 @@ namespace WorldBuilding.WorldModel
             }
             else
             {
-                throw new ChunkOutOfRangeException("Chunk coordinates are out of range.");
+                throw new BlockOutOfRangeException("Block coordinates are out of range.");
             }
         }
     }

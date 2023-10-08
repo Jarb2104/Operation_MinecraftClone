@@ -7,12 +7,11 @@ using Stride.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WorldBuilding;
 using WorldBuilding.Enums;
 using WorldBuilding.Helpers;
-using WorldBuilding.WorldDefinitions;
+using WorldBuilding.Mathematics;
 using WorldBuilding.WorldModel;
 
 namespace Operation_HarmonyShift.GameWorld
@@ -24,18 +23,24 @@ namespace Operation_HarmonyShift.GameWorld
         [DataMember(1, "World Seed")]
         public int WorldSeed { get; set; } = 12022111;
 
-        [DataMemberRange(1, 64, 1, 10, 0)]
-        [DataMember(5, "Chunk Size in Blocks")]
-        public short ChunkSize { get; set; } = 1;
+        [DataMemberRange(1, 32, 1, 10, 0)]
+        [DataMember(5, "Chunk Width in Blocks")]
+        public sbyte ChunkWidthSize { get; set; } = 1;
 
-        [DataMemberRange(1, 20, 1, 1, 0)]
+        [DataMemberRange(1, 32, 1, 10, 0)]
+        [DataMember(5, "Chunk Length in Blocks")]
+        public sbyte ChunkLengthSize { get; set; } = 1;
+
+        [DataMemberRange(1000, 1000000, 1, 100, 0)]
         [DataMember(5, "World Size in Chunks")]
-        //9x9 is the maximum number of chunks available as of now before the indices values go beyond what an int can hold
         public short WorldSize { get; set; } = 1;
+
+        [DataMemberRange(1, 100, 1, 1, 0)]
+        [DataMember(5, "Visible World Size in Chunks")]
+        public short VisbleWorldSize { get; set; } = 1;
 
         [DataMemberRange(1, 512, 1, 1, 0)]
         [DataMember(5, "World Height in Blocks")]
-        //9x9 is the maximum number of chunks available as of now before the indices values go beyond what an int can hold
         public short WorldHeight { get; set; } = 1;
 
         [DataMember(6, "Cube Materials")]
@@ -48,6 +53,18 @@ namespace Operation_HarmonyShift.GameWorld
         private readonly Dictionary<BlockType, List<VertexPositionNormal>> verticesCollection = new();
         private readonly Dictionary<BlockType, List<int>> indicesCollection = new();
         private bool Init = false;
+
+        private struct MeshDefinition
+        {
+            public List<VertexPositionNormal> meshVertices;
+            public List<int> meshIndices;
+
+            public MeshDefinition()
+            {
+                meshVertices = new List<VertexPositionNormal>();
+                meshIndices = new List<int>();
+            }
+        }
 
         //readonly ProfilingKey UpdateModelProfilingKey = new("Update My Model");
 
@@ -77,50 +94,94 @@ namespace Operation_HarmonyShift.GameWorld
         {
             //Generating world from parameters given coords
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
-            worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, WorldSize, (short)(WorldHeight / ChunkSize), ChunkSize, Log);
+            worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, VisbleWorldSize, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
 
-            Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world mesh");
-            List<Task> chunksGeneration = worldDescriptor.worldChunks.Select(ck => CreateGameChunkMesh(ck)).ToList();
-            await Task.WhenAll(chunksGeneration);
-            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh");
+            Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world");
+            List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck)).ToList();
+            await Task.WhenAll(chunkGenerators);
+            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world generation");
 
+            Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Populating the world's mesh with vertices and indexes");
+            await Parallel.ForEachAsync(worldDescriptor.worldChunks, async (ck, CancellationToken) =>
+            {
+                Dictionary<BlockType, MeshDefinition> meshResult = await CreateGameChunkMesh(ck);
+                Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Pupulating {ck.Key} vertices and indices");
+                lock (verticesCollection)
+                {
+                    foreach (KeyValuePair<BlockType, MeshDefinition> chunkMeshPortion in meshResult)
+                    {
+                        if (!verticesCollection.ContainsKey(chunkMeshPortion.Key))
+                        {
+                            verticesCollection.Add(chunkMeshPortion.Key, new List<VertexPositionNormal>());
+                            indicesCollection.Add(chunkMeshPortion.Key, new List<int>());
+                        }
+
+                        indicesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshIndices.Select(index => index + verticesCollection[chunkMeshPortion.Key].Count));
+                        verticesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshVertices);
+                    }
+                }
+            });
+            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished populating the world's mesh with vertices and indexes");
+
+            //var count = 0;
+            //foreach (Dictionary<BlockType, MeshDefinition> chunkMesh in chunkMeshGenerators.Select(cmg => cmg.Result))
+            //{
+            //    foreach (KeyValuePair<BlockType, MeshDefinition> chunkMeshPortion in chunkMesh)
+            //    {
+
+            //        if (!verticesCollection.ContainsKey(chunkMeshPortion.Key))
+            //        {
+            //            verticesCollection.Add(chunkMeshPortion.Key, new List<VertexPositionNormal>());
+            //            indicesCollection.Add(chunkMeshPortion.Key, new List<int>());
+            //        }
+
+            //        indicesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshIndices.Select(index => index + verticesCollection[chunkMeshPortion.Key].Count));
+            //        verticesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshVertices);
+            //    }
+            //    count++;
+            //}
+
+
+            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh generation");
             await Task.Run(() =>
             {
                 // The model classes
                 Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Sending world mesh to the primitive procedural model base");
                 GameWorldModel = new GameWorldModelRenderer(Entity, WorldMaterials, verticesCollection, indicesCollection);
-                GameWorldModel.Start();
             });
         }
 
-        private async Task CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
+        private async Task CreateGameChunk(KeyValuePair<Vector3, Chunk> worldChunk)
         {
-            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation started");
+            //Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation started");
             await worldChunk.Value.GenerateTerrain(WorldSeed, BlockScale.X, Log);
-            Log.Verbose($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation finished");
-
-            CreateGameBlockMesh(worldChunk.Value.chunkBlocks);
-
-            Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
+            //Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation finished");
         }
 
-        private void CreateGameBlockMesh(Dictionary<Vector3, Block> chunkBlocks)
+        private static async Task<Dictionary<BlockType, MeshDefinition>> CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
         {
+            //Log.Warning($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Started with chunk {worldChunk.Key} mesh");
+            Dictionary<BlockType, MeshDefinition> result = await Task.Run(() => CreateGameBlocksVertices(worldChunk.Value.chunkBlocks));
+            ////Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
+            return result;
+        }
+
+        private static Dictionary<BlockType, MeshDefinition> CreateGameBlocksVertices(Dictionary<Vector3SByte, Block> chunkBlocks)
+        {
+            Dictionary<BlockType, MeshDefinition> chunkMesh = new();
             Span<Block> blocks = chunkBlocks.Select(vb => vb.Value).ToArray();
             foreach (Block chunkBlock in blocks)
             {
-                //Transform the vertices in the cube to accuratly reflect position and scale of the chunk
                 if (chunkBlock.IsTerrain)
                 {
-                    BlockType currentBlockType = chunkBlock.GetBlockType();
-                    if (!verticesCollection.ContainsKey(currentBlockType))
+                    if (!chunkMesh.ContainsKey(chunkBlock.Type))
                     {
-                        verticesCollection.Add(currentBlockType, new List<VertexPositionNormal>());
-                        indicesCollection.Add(currentBlockType, new List<int>());
+                        chunkMesh.Add(chunkBlock.Type, new MeshDefinition());
                     }
-                    CreateBlockFaces(chunkBlock, verticesCollection[currentBlockType], indicesCollection[currentBlockType]);
+                    CreateBlockFaces(chunkBlock, chunkMesh[chunkBlock.Type].meshVertices, chunkMesh[chunkBlock.Type].meshIndices);
                 }
             }
+            return chunkMesh;
         }
 
         //void UpdateMyModel()
@@ -144,10 +205,8 @@ namespace Operation_HarmonyShift.GameWorld
             //Add each of the cubes vertices to the mesh of the array a single time
             List<Vector3> blockVertices = currentBlock.GetVertices();
             Block neighborBlock;
-            for (int i = 0; i < blockVertices.Count; i++)
-            {
-                vertices.Add(new VertexPositionNormal(blockVertices[i], CubeHelpers.Normals[i]));
-            }
+
+            vertices.AddRange(blockVertices.Select(v => new VertexPositionNormal(v, CubeHelpers.Normals[blockVertices.IndexOf(v)])));
 
             foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
             {
@@ -155,6 +214,10 @@ namespace Operation_HarmonyShift.GameWorld
                 neighborBlock ??= currentBlock.ParentChunk.GetNeighborFromNeighborChunk(currentBlock.BlockCoords, face);
 
                 if (neighborBlock != null && !neighborBlock.IsTerrain)
+                {
+                    CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
+                }
+                else if (neighborBlock == null)
                 {
                     CreateFace(currentBlock.GetFaceVertices(face), face, vertices, indices);
                 }
@@ -166,32 +229,33 @@ namespace Operation_HarmonyShift.GameWorld
             int firstVertex = vertices.Count - 8;
             switch (face)
             {
-                case FaceSide.Back:
-                case FaceSide.Right:
-                case FaceSide.Bottom:
-                    //First Triangle
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
-
-                    //Second Triangle              
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
-                    break;
-
                 case FaceSide.Front:
                 case FaceSide.Left:
                 case FaceSide.Top:
-                    //First Triangle               
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
 
-                    //Second Triangle              
-                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    //First Triangle               
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+
+                    //Second Triangle              
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    break;
+
+                case FaceSide.Back:
+                case FaceSide.Right:
+                case FaceSide.Bottom:
+                    //first triangle               
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
+
+                    //second triangle              
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
+                    indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[1]));
                     break;
             }
         }

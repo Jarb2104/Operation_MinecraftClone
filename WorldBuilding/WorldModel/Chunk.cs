@@ -5,66 +5,77 @@ using Stride.Core.Mathematics;
 using WorldBuilding.Helpers;
 using WorldBuilding.CustomErrors;
 using Stride.Core.Diagnostics;
+using WorldBuilding.Mathematics;
 
 namespace WorldBuilding.WorldModel
 {
     public class Chunk
     {
         public Vector3 ChunkCoords { get; }
-        public short ChunkSize { get; }
+        public sbyte ChunkWidthSize { get; }
+        public sbyte ChunkLenghtSize { get; }
+        public sbyte ChunkHeightSize { get; }
         public World ParentWorld { get; }
-        public readonly Dictionary<Vector3, Block> chunkBlocks = null!;
+        public Dictionary<Vector3SByte, Block> chunkBlocks = null!;
 
-        public Chunk(World parentWorld, short x, short y, short z, short chunkSize)
+        public Chunk(World parentWorld, short x, short y, short z, sbyte chunkWidthSize, sbyte chunkLengthSize, sbyte chunkHeightSize)
         {
             ChunkCoords = new Vector3(x, y, z);
             ParentWorld = parentWorld;
-            ChunkSize = chunkSize;
-            chunkBlocks = new Dictionary<Vector3, Block>();
+            ChunkWidthSize = chunkWidthSize;
+            ChunkLenghtSize = chunkLengthSize;
+            ChunkHeightSize = chunkHeightSize;
+            chunkBlocks = new Dictionary<Vector3SByte, Block>();
         }
 
         public async Task GenerateTerrain(int seed, float blockScale, Logger Log)
         {
-            Noise.Seed = seed;
-            // Combine noise results
-
-            await Task.Run(() =>
-            {
-                Log.Warning($"{DateTime.Now.ToLongTimeString()} | Generating chunk {ChunkCoords}");
-                for (short i = 0; i < ChunkSize; i++)
-                {
-                    for (short j = 0; j < ChunkSize; j++)
-                    {
-                        for (short k = 0; k < ChunkSize; k++)
-                        {
-                            float mountainNoise = Noise.CalcPixel2D(i + (int)ChunkCoords.X * ChunkSize, k + (int)ChunkCoords.Z * ChunkSize, WorldVariables.MountainScale) * WorldVariables.MountainAmplitude / 100;
-                            //float detailNoise = Noise.CalcPixel2D(i + (int)ChunkCoords.X * Width, k + (int)ChunkCoords.Z * Length, WorldVariables.DetailScale) * WorldVariables.DetailAmplitude / 1000;
-                            float biomeNoise = Noise.CalcPixel2D(i + (int)ChunkCoords.X * ChunkSize, k + (int)ChunkCoords.Z * ChunkSize, WorldVariables.BiomeScale) * WorldVariables.BiomeAmplitude / 100;
-
-                            float terrainHeight = mountainNoise;// + detailNoise;
-                            bool isTerrain = j + ChunkCoords.Y * ChunkSize < QuantizeToInterval(terrainHeight);
-                            chunkBlocks.Add(new Vector3(i, j, k), (double)Math.Floor(biomeNoise) switch
-                            {
-                                <= WorldConstants.ForestThreshold => new Block(this, i, j, k, Biome.Forest, isTerrain, blockScale),
-                                > WorldConstants.ForestThreshold and <= WorldConstants.DesertThreshold => new Block(this, i, j, k, Biome.Desert, isTerrain, blockScale),
-                                > WorldConstants.DesertThreshold and <= WorldConstants.JungleThreshold => new Block(this, i, j, k, Biome.Jungle, isTerrain, blockScale),
-                                > WorldConstants.JungleThreshold and <= WorldConstants.TundraThreshold => new Block(this, i, j, k, Biome.Tundra, isTerrain, blockScale),
-                                > WorldConstants.TundraThreshold and <= WorldConstants.IcyThreshold => new Block(this, i, j, k, Biome.Icy, isTerrain, blockScale),
-                                > WorldConstants.IcyThreshold and <= WorldConstants.SwampThreshold => new Block(this, i, j, k, Biome.Swamp, isTerrain, blockScale),
-                                _ => new Block(this, i, j, k, Biome.Plains, isTerrain, blockScale),
-                            });
-                        }
-                    }
-                }
-                Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {ChunkCoords} finished generating");
-            });
+            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Generating chunk {ChunkCoords}");
+            chunkBlocks = await Task.Run(() => GenerateChunkBlocks(seed, blockScale, (int)ChunkCoords.X, (int)ChunkCoords.Y, (int)ChunkCoords.Z, ChunkWidthSize, ChunkHeightSize, ChunkLenghtSize, Log));
         }
 
-        public Block? GetNeighbor(Vector3 blockCoords, FaceSide face)
+        public Dictionary<Vector3SByte, Block> GenerateChunkBlocks(int seed, float blockScale, int X, int Y, int Z, sbyte chunkWidth, sbyte chunkHeight, sbyte chunkLength, Logger Log)
+        {
+            Noise.Seed = seed;
+            Dictionary<Vector3SByte, Block> newChunkBlocks = new();
+            for (sbyte i = 0; i < chunkWidth; i++)
+            {
+                for (sbyte k = 0; k < chunkLength; k++)
+                {
+                    for (sbyte j = (sbyte)(chunkHeight - 1); j > -1; j--)
+                    {
+                        float mountainNoise = Noise.CalcPixel2D(i + X * chunkWidth, k + Z * chunkLength, WorldVariables.MountainScale) * WorldVariables.MountainAmplitude / 100;
+                        //float detailNoise = Noise.CalcPixel2D(i + X * chunkWidth, k + Z * chunkLength, WorldVariables.DetailScale) * WorldVariables.DetailAmplitude / 1000;
+                        float biomeNoise = Noise.CalcPixel2D(i + X * chunkWidth, k + Z * chunkLength, WorldVariables.BiomeScale) * WorldVariables.BiomeAmplitude / 100;
+                        float terrainHeight = mountainNoise;
+                        bool isTerrain = j + Y * chunkHeight < (short)Math.Round(terrainHeight, 0);
+
+                        Block newBlock = new(this, i, j, k, isTerrain, blockScale)
+                        {
+                            Biome = (double)Math.Floor(biomeNoise) switch
+                            {
+                                <= WorldConstants.ForestThreshold => Biome.Forest,
+                                > WorldConstants.ForestThreshold and <= WorldConstants.DesertThreshold => Biome.Desert,
+                                > WorldConstants.DesertThreshold and <= WorldConstants.JungleThreshold => Biome.Jungle,
+                                > WorldConstants.JungleThreshold and <= WorldConstants.TundraThreshold => Biome.Tundra,
+                                > WorldConstants.TundraThreshold and <= WorldConstants.IcyThreshold => Biome.Icy,
+                                > WorldConstants.IcyThreshold and <= WorldConstants.SwampThreshold => Biome.Swamp,
+                                _ => Biome.Plains
+                            },
+                        };
+                        newChunkBlocks.Add(new Vector3SByte(i, j, k), newBlock);
+                    }
+                }
+            }
+            Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {ChunkCoords} finished generating");
+            return newChunkBlocks;
+        }
+
+        public Block? GetNeighbor(Vector3SByte blockCoords, FaceSide face)
         {
             if (chunkBlocks.ContainsKey(blockCoords))
             {
-                Vector3 neighBorCoords = blockCoords + CubeHelpers.Neighbors[(short)face];
+                Vector3SByte neighBorCoords = blockCoords + CubeHelpers.BlockNeighbors[(short)face];
                 if (chunkBlocks.ContainsKey(neighBorCoords))
                 {
                     return (Block?)chunkBlocks[neighBorCoords];
@@ -80,7 +91,7 @@ namespace WorldBuilding.WorldModel
             }
         }
 
-        public Block? GetNeighborFromNeighborChunk(Vector3 blockCoords, FaceSide face)
+        public Block? GetNeighborFromNeighborChunk(Vector3SByte blockCoords, FaceSide face)
         {
             Chunk? NeighborChunk = ParentWorld.GetChunkNeighbor(chunkBlocks[blockCoords].ParentChunk.ChunkCoords, face);
             if (NeighborChunk == null)
@@ -88,36 +99,30 @@ namespace WorldBuilding.WorldModel
                 return null;
             }
 
-            Vector3 neighborBlock = new(blockCoords.X, blockCoords.Y, blockCoords.Z);
+            Vector3SByte neighborBlock = new(blockCoords.X, blockCoords.Y, blockCoords.Z);
             switch (face)
             {
                 case FaceSide.Front:
-                    neighborBlock.Z = ChunkSize-1;
+                    neighborBlock.Z = (sbyte)(ChunkLenghtSize - 1);
                     break;
                 case FaceSide.Back:
                     neighborBlock.Z = 0;
                     break;
                 case FaceSide.Left:
-                    neighborBlock.X = ChunkSize-1;
+                    neighborBlock.X = (sbyte)(ChunkWidthSize - 1);
                     break;
                 case FaceSide.Right:
                     neighborBlock.X = 0;
                     break;
                 case FaceSide.Bottom:
-                    neighborBlock.Y = ChunkSize-1;
+                    neighborBlock.Y = (sbyte)(ChunkHeightSize - 1);
                     break;
                 case FaceSide.Top:
                     neighborBlock.Y = 0;
                     break;
             }
 
-            return chunkBlocks[neighborBlock];
-        }
-
-        private static short QuantizeToInterval(float val)
-        {
-            // Quantize to the nearest interval
-            return (short)Math.Round(val, 0);
+            return NeighborChunk.chunkBlocks[neighborBlock];
         }
     }
 }

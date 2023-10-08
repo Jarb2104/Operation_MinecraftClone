@@ -1,18 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Stride.Engine;
 using Stride.Rendering;
 using Stride.Graphics;
-using System.Linq;
-using WorldBuilding.WorldDefinitions;
+using WorldBuilding.Mathematics;
 using WorldBuilding.Enums;
+using Buffer = Stride.Graphics.Buffer;
 
 namespace Operation_HarmonyShift.GameWorld
 {
     public class GameWorldModelRenderer : SyncScript
     {
         // Declared public member fields and properties will show in the game studio
-        
-
         private readonly Model GameWorldModel = new();
         private readonly Mesh GameWorldMesh = new();
         private readonly Buffer<VertexPositionNormal> GameWorldVertexBuffer;
@@ -22,21 +21,25 @@ namespace Operation_HarmonyShift.GameWorld
         {
             gameWorldEntity.Add(this);
             int matIndex = 0;
-            foreach (KeyValuePair<BlockType, List<VertexPositionNormal>> meshVertices in modelVertices)
+
+            foreach (BlockType blockType in Enum.GetValues(typeof(BlockType)))
             {
-                GameWorldModel.Materials.Add(cubeMaterials[meshVertices.Key]);
-                
+                if (!modelVertices.ContainsKey(blockType))
+                    continue;
+
+                GameWorldModel.Materials.Add(cubeMaterials[blockType]);
+
                 /* NOTE: if resource usage here  is set to immutable (the default) you will encounter an error if you try to update it after creating it */
-                GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, meshVertices.Value.ToArray(), GraphicsResourceUsage.Dynamic);
-                GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, modelIndices[meshVertices.Key].ToArray(), GraphicsResourceUsage.Dynamic);
+                GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, modelVertices[blockType].ToArray(), GraphicsResourceUsage.Default);
+                GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, modelIndices[blockType].ToArray(), GraphicsResourceUsage.Default);
 
                 GameWorldMesh = new Mesh
                 {
                     Draw = new MeshDraw
                     {
                         PrimitiveType = PrimitiveType.TriangleList,
-                        DrawCount = meshVertices.Value.Count,
-                        IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, modelIndices[meshVertices.Key].Count),
+                        DrawCount = modelIndices[blockType].Count,
+                        IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, modelIndices[blockType].Count),
                         VertexBuffers = new[] { new VertexBufferBinding(GameWorldVertexBuffer, VertexPositionNormal.Layout, GameWorldVertexBuffer.ElementCount) },
                     },
                     MaterialIndex = matIndex++

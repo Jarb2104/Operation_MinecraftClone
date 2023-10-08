@@ -5,7 +5,8 @@
         Snow,
         Grass,
         Dirt,
-        Rock
+        Rock,
+        Corrupt
 
         // Add more biomes as needed
     }

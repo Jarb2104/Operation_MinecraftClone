@@ -1,21 +1,28 @@
 ﻿using Stride.Core.Mathematics;
 using WorldBuilding.Enums;
 using WorldBuilding.Helpers;
+using WorldBuilding.Mathematics;
 
 namespace WorldBuilding.WorldModel
 {
     public class Block
     {
-        public Vector3 BlockCoords { get; }
+        public Vector3SByte BlockCoords { get; }
         public Biome Biome { get; set; }
+        public BlockType Type
+        {
+            get
+            {
+                return GetBlockType();
+            }
+        }
         public bool IsTerrain { get; set; }
         public float BlockScale { get; }
         public Chunk ParentChunk { get; }
 
-        public Block(Chunk parentChunk, float x, float y, float z, Biome biome, bool isTerrain, float blockScale)
+        public Block(Chunk parentChunk, sbyte x, sbyte y, sbyte z, bool isTerrain, float blockScale)
         {
-            BlockCoords = new Vector3(x, y, z);
-            Biome = biome;
+            BlockCoords = new Vector3SByte(x, y, z);
             IsTerrain = isTerrain;
             BlockScale = blockScale;
             ParentChunk = parentChunk;
@@ -23,7 +30,11 @@ namespace WorldBuilding.WorldModel
 
         public List<Vector3> GetVertices()
         {
-            return CubeHelpers.Vertices.Select(v => v * BlockScale + BlockCoords * BlockScale + ParentChunk.ChunkCoords * ParentChunk.ChunkSize * BlockScale).ToList();
+            return CubeHelpers.Vertices.Select(v => v * BlockScale + 
+            new Vector3(
+                BlockCoords.X * BlockScale + ParentChunk.ChunkCoords.X * ParentChunk.ChunkWidthSize * BlockScale,
+                BlockCoords.Y * BlockScale + ParentChunk.ChunkCoords.Y * ParentChunk.ChunkHeightSize * BlockScale, 
+                BlockCoords.Z * BlockScale + ParentChunk.ChunkCoords.Z * ParentChunk.ChunkLenghtSize * BlockScale)).ToList();
         }
 
         public List<Vector3> GetFaceVertices(FaceSide side)
@@ -65,10 +76,10 @@ namespace WorldBuilding.WorldModel
                 case Biome.Plains:
                     result = (vertices[0].Y) switch
                     {
-                        >= 40 => BlockType.Snow,
-                        >= 30 and < 40 => BlockType.Rock,
-                        >= 20 and < 30 => BlockType.Grass,
-                        >= 10 and < 20 => BlockType.Dirt,
+                        <= 70 and > 55 => BlockType.Snow,
+                        <= 55 and > 40 => BlockType.Rock,
+                        <= 40 and > 20 => BlockType.Grass,
+                        <= 20 and > 0 => BlockType.Dirt,
                         _ => BlockType.Grass,
                     };
                     return result;

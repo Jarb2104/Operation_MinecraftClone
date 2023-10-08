@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Stride.Core.Mathematics;
 using Stride.Graphics;
 
-namespace WorldBuilding.WorldDefinitions
+namespace WorldBuilding.Mathematics
 {
     /// <summary>
     /// Describes a custom vertex format structure that contains position and color information. 
