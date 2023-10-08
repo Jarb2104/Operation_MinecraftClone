@@ -15,5 +15,8 @@ ExplicitFolders: []
 Bundles: []
 TemplateFolders: []
 RootAssets:
+    - 4fcf090a-a50a-4c63-9602-c835aa9c89c0:Materials/Snow
+    - 8e3ccde0-153f-433e-a663-63d3945c2f47:Materials/Corrupt
     - a1cd49b0-501e-45e9-a005-2045c843a4b1:Materials/Dirt
     - d74d61e2-d73e-4ffa-811f-c5df5e292c15:Materials/Grass
+    - ed2cf423-fa1b-4224-ac08-93cab6250e05:Materials/Rock

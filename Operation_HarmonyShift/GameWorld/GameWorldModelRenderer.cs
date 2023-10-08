@@ -1,72 +1,52 @@
-﻿using System.Collections.Generic;
-using Stride.Core.Mathematics;
+﻿using System;
+using System.Collections.Generic;
 using Stride.Engine;
 using Stride.Rendering;
 using Stride.Graphics;
-using Stride.Core.Shaders.Ast;
-using System.Linq;
+using WorldBuilding.Mathematics;
+using WorldBuilding.Enums;
+using Buffer = Stride.Graphics.Buffer;
 
 namespace Operation_HarmonyShift.GameWorld
 {
     public class GameWorldModelRenderer : SyncScript
     {
         // Declared public member fields and properties will show in the game studio
-        public List<Material> WorldMaterials = new();
-
         private readonly Model GameWorldModel = new();
         private readonly Mesh GameWorldMesh = new();
-        private readonly Buffer<Vector3> GameWorldVertexBuffer;
+        private readonly Buffer<VertexPositionNormal> GameWorldVertexBuffer;
         private readonly Buffer<int> GameWorldIndexBuffer;
 
-        public GameWorldModelRenderer(Entity gameWorldEntity, List<Vector3> vertices, List<int> indices) : base()
+        public GameWorldModelRenderer(Entity gameWorldEntity, Dictionary<BlockType, Material> cubeMaterials, Dictionary<BlockType, List<VertexPositionNormal>> modelVertices, Dictionary<BlockType, List<int>> modelIndices) : base()
         {
             gameWorldEntity.Add(this);
+            int matIndex = 0;
 
-            Mesh GameWorldMesh2 = new();
-            Material GameWorldMaterial = Content.Load<Material>("Materials/Grass");
-            GameWorldModel.Materials.Add(GameWorldMaterial);
-            Material GameWorldMaterial2 = Content.Load<Material>("Materials/Dirt");
-            GameWorldModel.Materials.Add(GameWorldMaterial2);
-            
-            GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, vertices.ToArray(), GraphicsResourceUsage.Default);
-            
-            /* NOTE: if resource usage here  is set to immutable (the default) you will encounter an error if you try to update it after creating it */
-            GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, indices.ToArray());
-
-            VertexDeclaration vertexDeclaration2 = VertexPositionTexture.Layout;
-            VertexDeclaration vertexDeclaration = new(new VertexElement("POSITION", PixelFormat.R32G32B32_Float));
-
-            GameWorldMesh = new Mesh
+            foreach (BlockType blockType in Enum.GetValues(typeof(BlockType)))
             {
-                Draw = new MeshDraw
+                if (!modelVertices.ContainsKey(blockType))
+                    continue;
+
+                GameWorldModel.Materials.Add(cubeMaterials[blockType]);
+
+                /* NOTE: if resource usage here  is set to immutable (the default) you will encounter an error if you try to update it after creating it */
+                GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, modelVertices[blockType].ToArray(), GraphicsResourceUsage.Default);
+                GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, modelIndices[blockType].ToArray(), GraphicsResourceUsage.Default);
+
+                GameWorldMesh = new Mesh
                 {
-                    PrimitiveType = PrimitiveType.TriangleList,
-                    DrawCount = indices.Count,
-                    IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, indices.Count),
-                    VertexBuffers = new[] { new VertexBufferBinding(GameWorldVertexBuffer, vertexDeclaration, GameWorldVertexBuffer.ElementCount) },
-                }
-            };
+                    Draw = new MeshDraw
+                    {
+                        PrimitiveType = PrimitiveType.TriangleList,
+                        DrawCount = modelIndices[blockType].Count,
+                        IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, modelIndices[blockType].Count),
+                        VertexBuffers = new[] { new VertexBufferBinding(GameWorldVertexBuffer, VertexPositionNormal.Layout, GameWorldVertexBuffer.ElementCount) },
+                    },
+                    MaterialIndex = matIndex++
+                };
+                GameWorldModel.Add(GameWorldMesh);
+            }
 
-            var Vertices2 = vertices.Select(vpt => new VertexPositionTexture { Position = vpt + 1f });
-            var GameWorldVertexBuffer2 = Buffer.Vertex.New(GraphicsDevice, Vertices2.ToArray(), GraphicsResourceUsage.Default);
-            var GameWorldIndexBuffer2 = Buffer.Index.New(GraphicsDevice, indices.ToArray());
-
-            GameWorldMesh2 = new Mesh
-            {
-                Draw = new MeshDraw
-                {
-                    PrimitiveType = PrimitiveType.TriangleList,
-                    DrawCount = indices.Count,
-                    IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer2, true, indices.Count),
-                    VertexBuffers = new[] { new VertexBufferBinding(GameWorldVertexBuffer2, vertexDeclaration, GameWorldVertexBuffer2.ElementCount) },
-                }
-            };
-
-            GameWorldMesh.MaterialIndex = 0;
-            GameWorldModel.Add(GameWorldMesh);
-
-            GameWorldMesh2.MaterialIndex = 1;
-            GameWorldModel.Add(GameWorldMesh2);
             Entity.GetOrCreate<ModelComponent>().Model = GameWorldModel;
         }
 

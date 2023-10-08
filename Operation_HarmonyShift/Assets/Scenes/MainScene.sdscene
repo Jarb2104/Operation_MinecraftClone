@@ -11,8 +11,34 @@ Hierarchy:
         - ref!! 984d9c09-e349-470d-adf0-ad6b969b893e
         - ref!! 15252349-b015-45f6-9d8b-880ba5e18c6e
         - ref!! 69294287-a946-4668-aba8-10e67cac5304
-        - ref!! 8caf3314-d0bf-4d4b-b86d-d17bf862e56c
+        - ref!! 0678e1a5-a88a-440a-a19a-8d8b6c11c846
     Parts:
+        -   Folder: Entities/WorldEntities
+            Entity:
+                Id: 0678e1a5-a88a-440a-a19a-8d8b6c11c846
+                Name: GameWorld
+                Components:
+                    0bfdc78570b7bd8690a4544f611bbcb3: !TransformComponent
+                        Id: 1d01576f-ab33-4b7e-8c46-5cf08cf11b62
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    0afbfa5641d65246cad8c8f6be5e9c18: !Operation_HarmonyShift.GameWorld.GameWorldFactory,Operation_HarmonyShift
+                        Id: ea87db8e-8622-42c0-bfdb-b78ddc274426
+                        World Seed: 12022111
+                        Chunk Width in Blocks: 32
+                        Chunk Length in Blocks: 32
+                        World Size in Chunks: 1000
+                        Visible World Size in Chunks: 15
+                        World Height in Blocks: 299
+                        Cube Materials:
+                            45f0ff40e3abf4f2cf14e13e25fc16cf~Dirt: a1cd49b0-501e-45e9-a005-2045c843a4b1:Materials/Dirt
+                            55eda114733b544e6023facf14f3c2f3~Grass: d74d61e2-d73e-4ffa-811f-c5df5e292c15:Materials/Grass
+                            6d5f4fd27ddadee74aeb43a9a34b0c29~Rock: ed2cf423-fa1b-4224-ac08-93cab6250e05:Materials/Rock
+                            0fe88cae8f9a368193a158375dd0ad7a~Snow: 4fcf090a-a50a-4c63-9602-c835aa9c89c0:Materials/Snow
+                            837a389e0bc780d576db6ad954e79bbb~Corrupt: 8e3ccde0-153f-433e-a663-63d3945c2f47:Materials/Corrupt
+                        BlockScale: {X: 1.0, Y: 1.0, Z: 1.0}
         -   Entity:
                 Id: 15252349-b015-45f6-9d8b-880ba5e18c6e
                 Name: Sphere
@@ -76,8 +102,8 @@ Hierarchy:
                 Components:
                     31130025352f672bcf59bc8aeead6d78: !TransformComponent
                         Id: 405514b2-04ba-4f7f-a7fd-55ce021e2dea
-                        Position: {X: 13.096805, Y: 4.7143965, Z: -5.226317}
-                        Rotation: {X: 0.0, Y: 0.82903755, Z: 0.0, W: 0.5591929}
+                        Position: {X: 0.0, Y: 6.0, Z: -13.0}
+                        Rotation: {X: -3.782759E-09, Y: -1.0, Z: -1.6534965E-16, W: -4.371139E-08}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
                     e0d307eb7f4528b761d6a1ff8d5e2bd8: !CameraComponent
@@ -94,23 +120,6 @@ Hierarchy:
                         KeyboardRotationSpeed: {X: 3.0, Y: 3.0}
                         MouseRotationSpeed: {X: 1.0, Y: 1.0}
                         TouchRotationSpeed: {X: 1.0, Y: 0.7}
-        -   Folder: Entities/WorldEntities
-            Entity:
-                Id: 8caf3314-d0bf-4d4b-b86d-d17bf862e56c
-                Name: GameWorld
-                Components:
-                    4dc3d9569d2c78eacc4f897b330c83f7: !TransformComponent
-                        Id: a3f2a8fd-ed1f-40a2-97ba-7dcd7645e504
-                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
-                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
-                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
-                        Children: {}
-                    e14abe42de2e4bff89f63c72ca857fea: !Operation_HarmonyShift.GameWorld.GameWorldFactory,Operation_HarmonyShift
-                        Id: 7b0507b7-cbf5-481c-92e4-f24fc3acad2c
-                        World Seed: 12022111
-                        Chunk Size: 1
-                        World Size: 1
-                        BlockScale: {X: 1.0, Y: 1.0, Z: 1.0}
         -   Entity:
                 Id: 984d9c09-e349-470d-adf0-ad6b969b893e
                 Name: Skybox
