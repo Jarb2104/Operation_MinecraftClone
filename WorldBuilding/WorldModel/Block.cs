@@ -8,14 +8,8 @@ namespace WorldBuilding.WorldModel
     public class Block
     {
         public Vector3SByte BlockCoords { get; }
-        public Biome Biome { get; set; }
-        public BlockType Type
-        {
-            get
-            {
-                return GetBlockType();
-            }
-        }
+        public Biomes Biome { get; set; }
+        public BlockTypes BlockType { get; set; }
         public bool IsTerrain { get; set; }
         public float BlockScale { get; }
         public Chunk ParentChunk { get; }
@@ -65,26 +59,6 @@ namespace WorldBuilding.WorldModel
             }
 
             return resultVertices;
-        }
-
-        public BlockType GetBlockType()
-        {
-            List<Vector3> vertices = GetVertices();
-            BlockType result = BlockType.Grass;
-            switch (Biome)
-            {
-                case Biome.Plains:
-                    result = (vertices[0].Y) switch
-                    {
-                        <= 70 and > 55 => BlockType.Snow,
-                        <= 55 and > 40 => BlockType.Rock,
-                        <= 40 and > 20 => BlockType.Grass,
-                        <= 20 and > 0 => BlockType.Dirt,
-                        _ => BlockType.Grass,
-                    };
-                    return result;
-                default: return result;
-            }
         }
     }
 }

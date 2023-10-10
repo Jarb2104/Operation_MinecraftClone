@@ -12,34 +12,41 @@ namespace Operation_HarmonyShift.GameWorld
     public class GameWorldModelRenderer : SyncScript
     {
         // Declared public member fields and properties will show in the game studio
-        private readonly Model GameWorldModel = new();
-        private readonly Mesh GameWorldMesh = new();
-        private readonly Buffer<VertexPositionNormal> GameWorldVertexBuffer;
-        private readonly Buffer<int> GameWorldIndexBuffer;
+        private Mesh GameWorldMesh = new();
+        private Buffer<VertexPositionNormal> GameWorldVertexBuffer;
+        private Buffer<int> GameWorldIndexBuffer;
 
-        public GameWorldModelRenderer(Entity gameWorldEntity, Dictionary<BlockType, Material> cubeMaterials, Dictionary<BlockType, List<VertexPositionNormal>> modelVertices, Dictionary<BlockType, List<int>> modelIndices) : base()
+        private readonly Model GameWorldModel = new();
+        private readonly Dictionary<BlockTypes, List<VertexPositionNormal>> VerticesCollection = new();
+        private readonly Dictionary<BlockTypes, List<int>> IndicesCollection = new();
+        private readonly Dictionary<BlockTypes, Material> CubeMaterials;
+
+        public GameWorldModelRenderer(Entity gameWorldEntity, Dictionary<BlockTypes, Material> cubeMaterials, Dictionary<BlockTypes, List<VertexPositionNormal>> modelVertices, Dictionary<BlockTypes, List<int>> modelIndices) : base()
         {
             gameWorldEntity.Add(this);
-            int matIndex = 0;
+            CubeMaterials = cubeMaterials;
+            VerticesCollection = modelVertices;
+            IndicesCollection = modelIndices;
 
-            foreach (BlockType blockType in Enum.GetValues(typeof(BlockType)))
+            int matIndex = 0;
+            foreach (BlockTypes blockType in Enum.GetValues(typeof(BlockTypes)))
             {
-                if (!modelVertices.ContainsKey(blockType))
+                if (!VerticesCollection.ContainsKey(blockType))
                     continue;
 
-                GameWorldModel.Materials.Add(cubeMaterials[blockType]);
+                GameWorldModel.Materials.Add(CubeMaterials[blockType]);
 
                 /* NOTE: if resource usage here  is set to immutable (the default) you will encounter an error if you try to update it after creating it */
-                GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, modelVertices[blockType].ToArray(), GraphicsResourceUsage.Default);
-                GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, modelIndices[blockType].ToArray(), GraphicsResourceUsage.Default);
+                GameWorldVertexBuffer = Buffer.Vertex.New(GraphicsDevice, VerticesCollection[blockType].ToArray(), GraphicsResourceUsage.Default);
+                GameWorldIndexBuffer = Buffer.Index.New(GraphicsDevice, IndicesCollection[blockType].ToArray(), GraphicsResourceUsage.Default);
 
                 GameWorldMesh = new Mesh
                 {
                     Draw = new MeshDraw
                     {
                         PrimitiveType = PrimitiveType.TriangleList,
-                        DrawCount = modelIndices[blockType].Count,
-                        IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, modelIndices[blockType].Count),
+                        DrawCount = IndicesCollection[blockType].Count,
+                        IndexBuffer = new IndexBufferBinding(GameWorldIndexBuffer, true, IndicesCollection[blockType].Count),
                         VertexBuffers = new[] { new VertexBufferBinding(GameWorldVertexBuffer, VertexPositionNormal.Layout, GameWorldVertexBuffer.ElementCount) },
                     },
                     MaterialIndex = matIndex++
@@ -53,6 +60,7 @@ namespace Operation_HarmonyShift.GameWorld
         public override void Start()
         {
             // Initialization of the script.
+            
         }
 
         public override void Update()
