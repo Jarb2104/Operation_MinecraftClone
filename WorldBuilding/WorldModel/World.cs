@@ -3,37 +3,38 @@ using Stride.Core.Mathematics;
 using WorldBuilding.CustomErrors;
 using WorldBuilding.Enums;
 using WorldBuilding.Helpers;
+using WorldBuilding.Mathematics;
 
 namespace WorldBuilding.WorldModel
 {
     public class World
     {
         public int WorldSeed { get; }
-        public short WorldSize { get; }
-        public short Height { get; }
+        public int WorldSize { get; }
+        public int WorldHeight { get; }
         public sbyte ChunkWidthSize { get; }
         public sbyte ChunkLengthSize { get; }
         public sbyte ChunkHeightSize { get; }
         public readonly Dictionary<Vector3, Chunk> worldChunks = null!;
 
-        public World(int worldSeed, short worldSize, short worldHeight, sbyte chunkWidthSize, sbyte chunkLengthSize)
+        public World(int worldSeed, int worldSize, short worldHeight, sbyte chunkWidthSize, sbyte chunkLengthSize)
         {
             WorldSeed = worldSeed;
             WorldSize = worldSize;
-            Height = (short)Math.Ceiling((decimal)worldHeight / worldSize);
+            WorldHeight = worldHeight;
             ChunkWidthSize = chunkWidthSize;
             ChunkLengthSize = chunkLengthSize;
-            ChunkHeightSize = (sbyte)Math.Ceiling((decimal)worldHeight / Height);
+            ChunkHeightSize = (sbyte)Math.Ceiling((decimal)worldHeight / (decimal)worldSize);
             worldChunks = new Dictionary<Vector3, Chunk>();
         }
 
         public void CreateWorldChunks(Logger Log)
         {
-            for (short i = 0; i < WorldSize; i++)
+            for (int i = 0; i < WorldSize; i++)
             {
-                for (short j = 0; j < Height; j++)
+                for (int j = 0; j < WorldSize; j++)
                 {
-                    for (short k = 0; k < WorldSize; k++)
+                    for (int k = 0; k < WorldSize; k++)
                     {
                         Vector3 v = new(i, j, k);
                         worldChunks.Add(v, new Chunk(this, i, j, k, ChunkWidthSize, ChunkLengthSize, ChunkHeightSize));
@@ -43,13 +44,6 @@ namespace WorldBuilding.WorldModel
             }
 
             Log.Verbose($"{DateTime.Now.ToLongTimeString()} | All world chunks generated");
-        }
-
-        public async Task GenerateChunkTerrain(Vector3 chunkCoords, float blockScale, Logger Log)
-        {
-            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation started");
-            await worldChunks[chunkCoords].GenerateTerrain(WorldSeed, blockScale, Log);
-            Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {chunkCoords} terrain generation finished");
         }
 
         public Chunk? GetChunkNeighbor(Vector3 chunkCoords, FaceSide face)

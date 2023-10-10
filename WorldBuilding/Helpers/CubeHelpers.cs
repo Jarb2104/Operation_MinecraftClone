@@ -17,7 +17,7 @@ namespace WorldBuilding.Helpers
             new Vector3 ( 1,  1,  1),
         };
 
-        public static readonly List<Vector3> Vertices = new()
+        public static readonly Vector3[] Vertices =
         {
             new Vector3(0, 0, 0),
             new Vector3(1, 0, 0),

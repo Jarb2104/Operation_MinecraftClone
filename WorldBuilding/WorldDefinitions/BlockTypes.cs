@@ -1,12 +1,13 @@
 ﻿namespace WorldBuilding.Enums
 {
-    public enum BlockType
+    public enum BlockTypes
     {
         Snow,
         Grass,
         Dirt,
         Rock,
-        Corrupt
+        Corrupt,
+        Air
 
         // Add more biomes as needed
     }

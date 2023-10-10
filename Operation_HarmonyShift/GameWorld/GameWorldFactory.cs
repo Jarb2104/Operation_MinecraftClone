@@ -44,14 +44,14 @@ namespace Operation_HarmonyShift.GameWorld
         public short WorldHeight { get; set; } = 1;
 
         [DataMember(6, "Cube Materials")]
-        public Dictionary<BlockType, Material> WorldMaterials = new();
+        public Dictionary<BlockTypes, Material> WorldMaterials = new();
 
         public Vector3 BlockScale { get; set; }
 
         private World worldDescriptor = null;
         private GameWorldModelRenderer GameWorldModel;
-        private readonly Dictionary<BlockType, List<VertexPositionNormal>> verticesCollection = new();
-        private readonly Dictionary<BlockType, List<int>> indicesCollection = new();
+        private readonly Dictionary<BlockTypes, List<VertexPositionNormal>> verticesCollection = new();
+        private readonly Dictionary<BlockTypes, List<int>> indicesCollection = new();
         private bool Init = false;
 
         private struct MeshDefinition
@@ -96,19 +96,21 @@ namespace Operation_HarmonyShift.GameWorld
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
             worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, VisbleWorldSize, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
 
+            Noise simplexNoise = new(WorldSeed);
+
             Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world");
-            List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck)).ToList();
+            List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck, simplexNoise)).ToList();
             await Task.WhenAll(chunkGenerators);
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world generation");
 
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Populating the world's mesh with vertices and indexes");
             await Parallel.ForEachAsync(worldDescriptor.worldChunks, async (ck, CancellationToken) =>
             {
-                Dictionary<BlockType, MeshDefinition> meshResult = await CreateGameChunkMesh(ck);
-                Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Pupulating {ck.Key} vertices and indices");
+                Dictionary<BlockTypes, MeshDefinition> meshResult = await CreateGameChunkMesh(ck);
+                Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Populating {ck.Key} vertices and indices");
                 lock (verticesCollection)
                 {
-                    foreach (KeyValuePair<BlockType, MeshDefinition> chunkMeshPortion in meshResult)
+                    foreach (KeyValuePair<BlockTypes, MeshDefinition> chunkMeshPortion in meshResult)
                     {
                         if (!verticesCollection.ContainsKey(chunkMeshPortion.Key))
                         {
@@ -124,9 +126,9 @@ namespace Operation_HarmonyShift.GameWorld
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished populating the world's mesh with vertices and indexes");
 
             //var count = 0;
-            //foreach (Dictionary<BlockType, MeshDefinition> chunkMesh in chunkMeshGenerators.Select(cmg => cmg.Result))
+            //foreach (Dictionary<BlockTypes, MeshDefinition> chunkMesh in chunkMeshGenerators.Select(cmg => cmg.Result))
             //{
-            //    foreach (KeyValuePair<BlockType, MeshDefinition> chunkMeshPortion in chunkMesh)
+            //    foreach (KeyValuePair<BlockTypes, MeshDefinition> chunkMeshPortion in chunkMesh)
             //    {
 
             //        if (!verticesCollection.ContainsKey(chunkMeshPortion.Key))
@@ -151,34 +153,44 @@ namespace Operation_HarmonyShift.GameWorld
             });
         }
 
-        private async Task CreateGameChunk(KeyValuePair<Vector3, Chunk> worldChunk)
+        private async Task CreateGameChunk(KeyValuePair<Vector3, Chunk> worldChunk, Noise simplexNoise)
         {
             //Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation started");
-            await worldChunk.Value.GenerateTerrain(WorldSeed, BlockScale.X, Log);
+            await worldChunk.Value.GenerateTerrain(BlockScale.X, WorldHeight, simplexNoise, Log);
             //Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation finished");
         }
 
-        private static async Task<Dictionary<BlockType, MeshDefinition>> CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
+        private static async Task<Dictionary<BlockTypes, MeshDefinition>> CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
         {
             //Log.Warning($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Started with chunk {worldChunk.Key} mesh");
-            Dictionary<BlockType, MeshDefinition> result = await Task.Run(() => CreateGameBlocksVertices(worldChunk.Value.chunkBlocks));
+            Dictionary<BlockTypes, MeshDefinition> result = await Task.Run(() => CreateGameBlocksVertices(worldChunk.Value.chunkBlocks));
             ////Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
             return result;
         }
 
-        private static Dictionary<BlockType, MeshDefinition> CreateGameBlocksVertices(Dictionary<Vector3SByte, Block> chunkBlocks)
+        private static Dictionary<BlockTypes, MeshDefinition> CreateGameBlocksVertices(Dictionary<Vector3SByte, Block> chunkBlocks)
         {
-            Dictionary<BlockType, MeshDefinition> chunkMesh = new();
+            Dictionary<BlockTypes, MeshDefinition> chunkMesh = new();
             Span<Block> blocks = chunkBlocks.Select(vb => vb.Value).ToArray();
             foreach (Block chunkBlock in blocks)
             {
+                var isVisible = false;
+                foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
+                {
+                    var neighborBlock = chunkBlock.ParentChunk.GetNeighbor(chunkBlock.BlockCoords, face);
+                    neighborBlock ??= chunkBlock.ParentChunk.GetNeighborFromNeighborChunk(chunkBlock.BlockCoords, face);
+
+                    isVisible = neighborBlock != null && !neighborBlock.IsTerrain || neighborBlock != null;
+                    if (isVisible) break;
+                }
+
                 if (chunkBlock.IsTerrain)
                 {
-                    if (!chunkMesh.ContainsKey(chunkBlock.Type))
+                    if (!chunkMesh.ContainsKey(chunkBlock.BlockType))
                     {
-                        chunkMesh.Add(chunkBlock.Type, new MeshDefinition());
+                        chunkMesh.Add(chunkBlock.BlockType, new MeshDefinition());
                     }
-                    CreateBlockFaces(chunkBlock, chunkMesh[chunkBlock.Type].meshVertices, chunkMesh[chunkBlock.Type].meshIndices);
+                    CreateBlockFaces(chunkBlock, chunkMesh[chunkBlock.BlockType].meshVertices, chunkMesh[chunkBlock.BlockType].meshIndices);
                 }
             }
             return chunkMesh;
