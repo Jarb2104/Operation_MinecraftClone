@@ -12,9 +12,9 @@ namespace Operation_HarmonyShift.GameWorld
     public class GameWorldModelRenderer : SyncScript
     {
         // Declared public member fields and properties will show in the game studio
-        private Mesh GameWorldMesh = new();
-        private Buffer<VertexPositionNormal> GameWorldVertexBuffer;
-        private Buffer<int> GameWorldIndexBuffer;
+        private readonly Mesh GameWorldMesh = new();
+        private readonly Buffer<VertexPositionNormal> GameWorldVertexBuffer;
+        private readonly Buffer<int> GameWorldIndexBuffer;
 
         private readonly Model GameWorldModel = new();
         private readonly Dictionary<BlockTypes, List<VertexPositionNormal>> VerticesCollection = new();

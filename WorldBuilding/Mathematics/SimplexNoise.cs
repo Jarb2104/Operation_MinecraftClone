@@ -105,6 +105,15 @@ public class Noise
         return values;
     }
 
+    public float[,] Calc2DFromOffSet(ulong xOffSet, ulong width, ulong yOffSet, ulong height, float scale)
+    {
+        var values = new float[width, height];
+        for (ulong i = 0; i < width; i++)
+            for (ulong j = 0; j < height; j++)
+                values[i, j] = Generate((i + xOffSet) * scale, (j+yOffSet) * scale) * 128 + 128;
+        return values;
+    }
+
     public float[,,] Calc3D(ulong width, ulong height, ulong length, float scale)
     {
         var values = new float[width, height, length];

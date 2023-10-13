@@ -1,13 +1,12 @@
 ﻿namespace WorldBuilding.Enums
 {
-    public enum BlockTypes
+    public enum BlockTypes : ushort
     {
         Snow,
         Grass,
         Dirt,
         Rock,
-        Corrupt,
-        Air
+        Corrupt
         // Add more types as needed
     }
 }

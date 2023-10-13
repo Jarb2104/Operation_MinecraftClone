@@ -1,8 +1,10 @@
-﻿using Stride.Core;
+﻿using Microsoft.VisualBasic.Logging;
+using Stride.Core;
 using Stride.Core.Annotations;
 using Stride.Core.Diagnostics;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using Stride.Input;
 using Stride.Rendering;
 using System;
 using System.Collections.Generic;
@@ -24,34 +26,44 @@ namespace Operation_HarmonyShift.GameWorld
         public int WorldSeed { get; set; } = 12022111;
 
         [DataMemberRange(1, 32, 1, 10, 0)]
-        [DataMember(5, "Chunk Width in Blocks")]
+        [DataMember(2, "Chunk Width in Blocks")]
         public sbyte ChunkWidthSize { get; set; } = 1;
 
         [DataMemberRange(1, 32, 1, 10, 0)]
-        [DataMember(5, "Chunk Length in Blocks")]
+        [DataMember(3, "Chunk Length in Blocks")]
         public sbyte ChunkLengthSize { get; set; } = 1;
 
-        [DataMemberRange(1000, 1000000, 1, 100, 0)]
-        [DataMember(5, "World Size in Chunks")]
-        public short WorldSize { get; set; } = 1;
-
-        [DataMemberRange(1, 100, 1, 1, 0)]
-        [DataMember(5, "Visible World Size in Chunks")]
-        public short VisbleWorldSize { get; set; } = 1;
-
         [DataMemberRange(1, 512, 1, 1, 0)]
-        [DataMember(5, "World Height in Blocks")]
+        [DataMember(4, "World Height in Blocks")]
         public short WorldHeight { get; set; } = 1;
+
+        [DataMemberRange(100, 1000000, 100, 10000, 0)]
+        [DataMember(5, "Visible World")]
+        public int ViewDistance { get; set; } = 1;
 
         [DataMember(6, "Cube Materials")]
         public Dictionary<BlockTypes, Material> WorldMaterials = new();
         public Vector3 BlockScale { get; set; }
 
+        [DataMember(7, "Player Camera Entity Name")]
+        public string PlayerCameraName;
+
+        private bool Init = false;
+        private readonly Vector2[] EdgeTrackers =
+        {
+            new Vector2(0,0),
+            new Vector2(0,0),
+            new Vector2(0,0),
+            new Vector2(0,0)
+        };
+        private readonly Vector2[] DrawDistance = new Vector2[4];
         private World worldDescriptor = null;
-        private GameWorldModelRenderer GameWorldModel;
+        private Dictionary<Vector2, GameWorldModelRenderer> GameWorldModels;
+        private CameraComponent PlayerCamera;
+        private Noise simplexNoise;
         private readonly Dictionary<BlockTypes, List<VertexPositionNormal>> verticesCollection = new();
         private readonly Dictionary<BlockTypes, List<int>> indicesCollection = new();
-        private bool Init = false;
+        private readonly ProfilingKey UpdateModelProfilingKey = new("World Factory Model Population");
 
         private struct MeshDefinition
         {
@@ -65,46 +77,89 @@ namespace Operation_HarmonyShift.GameWorld
             }
         }
 
-        //readonly ProfilingKey UpdateModelProfilingKey = new("Update My Model");
+
 
         public override async Task Execute()
         {
+
             Log.ActivateLog(LogMessageType.Debug);
             // Setup the custom model
             if (!Init)
             {
-                await CreateGameWorldMesh();
+                //Creating class to generate noise
+                simplexNoise = new(WorldSeed);
+                //Getting the camera player
+                PlayerCamera = FindCameraComponent(PlayerCameraName);
+                //Creating the dictionary for the world models
+                if (GameWorldModels == null)
+                {
+                    GameWorldModels = new();
+                }
+                //Setting the draw distance for each direction of the map
+                DrawDistance[0] = new Vector2(ViewDistance, ViewDistance);
+                DrawDistance[1] = new Vector2(ViewDistance, -ViewDistance);
+                DrawDistance[2] = new Vector2(-ViewDistance, -ViewDistance);
+                DrawDistance[3] = new Vector2(-ViewDistance, ViewDistance);
+
                 Init = true;
             }
 
-            //while (Game.IsRunning)
-            //{
-            //    Log.Info("Test3");
-            //    // Do stuff every new frame
-            //    await Script.NextFrame();
-            //    using (Profiler.Begin(UpdateModelProfilingKey))
-            //    {
-            //        UpdateMyModel();
-            //    }
-            //}
+            while (Game.IsRunning)
+            {
+                await Script.NextFrame();
+                // Do stuff every new frame
+
+                using (Profiler.Begin(UpdateModelProfilingKey))
+                {
+                    foreach (Directions direction in Enum.GetValues(typeof(Directions)))
+                    {
+                        DrawWorld(direction, simplexNoise);
+                    }
+                }
+            }
         }
 
-        private async Task CreateGameWorldMesh()
+        private async void DrawWorld(Directions direction, Noise simplexNoise)
+        {
+            float currentViewDistance = Vector2.Distance(PlayerCamera.GetWorldPosition().XZ(), EdgeTrackers[(sbyte)direction]);
+            float actualViewDistance = Vector2.Distance(PlayerCamera.GetWorldPosition().XZ(), DrawDistance[(sbyte)direction]);
+            if (currentViewDistance < actualViewDistance)
+            {
+                await CreateGameWorldMeshPortion(new Vector2(0, EdgeTrackers[(sbyte)direction].Y), DrawDistance[(sbyte)direction], simplexNoise);
+                await CreateGameWorldMeshPortion(new Vector2(EdgeTrackers[(sbyte)direction].X, 0), DrawDistance[(sbyte)direction], simplexNoise);
+            }
+        }
+
+        private CameraComponent FindCameraComponent(string cameraComponentName)
+        {
+            foreach (var entity in Entity.Scene.Entities)
+            {
+                if (entity.Name == cameraComponentName)
+                {
+                    return entity.Get<CameraComponent>();
+                }
+            }
+
+            return null;
+        }
+
+        private async Task CreateGameWorldMeshPortion(Vector2 initPosition, Vector2 endPosition, Noise simplexNoise)
         {
             //Generating world from parameters given coords
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
-            worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, VisbleWorldSize, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
-            Noise simplexNoise = new(WorldSeed);
+            worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
+
+            worldDescriptor.CreateWorldChunks(Log, initPosition, endPosition);
 
             Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world");
-            List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck, simplexNoise)).ToList();
+            List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => ck.Value.GenerateTerrain(BlockScale.X, WorldHeight, simplexNoise)).ToList();
             await Task.WhenAll(chunkGenerators);
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world generation");
 
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Populating the world's mesh with vertices and indexes");
             await Parallel.ForEachAsync(worldDescriptor.worldChunks, async (ck, CancellationToken) =>
             {
-                Dictionary<BlockTypes, MeshDefinition> meshResult = await CreateGameChunkMesh(ck);
+                Dictionary<BlockTypes, MeshDefinition> meshResult = await Task.Run(() => CreateChunkBlocks(ck.Value.ChunkBlocks));
                 Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Populating {ck.Key} vertices and indices");
                 lock (verticesCollection)
                 {
@@ -122,47 +177,42 @@ namespace Operation_HarmonyShift.GameWorld
                 }
             });
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished populating the world's mesh with vertices and indexes");
-            Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh generation");
             await Task.Run(() =>
             {
                 // The model classes
                 Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Sending world mesh to the primitive procedural model base");
-                GameWorldModel = new GameWorldModelRenderer(Entity, WorldMaterials, verticesCollection, indicesCollection);
+                GameWorldModels.Add(initPosition, new GameWorldModelRenderer(Entity, WorldMaterials, verticesCollection, indicesCollection));
             });
         }
 
-        private async Task CreateGameChunk(KeyValuePair<Vector3, Chunk> worldChunk, Noise simplexNoise)
-        {
-            //Log.Warning($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation started");
-            await worldChunk.Value.GenerateTerrain(BlockScale.X, WorldHeight, simplexNoise, Log);
-            //Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {worldChunk.Key} terrain generation finished");
-        }
-
-        private static async Task<Dictionary<BlockTypes, MeshDefinition>> CreateGameChunkMesh(KeyValuePair<Vector3, Chunk> worldChunk)
-        {
-            //Log.Warning($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Started with chunk {worldChunk.Key} mesh");
-            Dictionary<BlockTypes, MeshDefinition> result = await Task.Run(() => CreateGameBlocksVertices(worldChunk.Value.chunkBlocks));
-            ////Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with chunk {worldChunk.Key} mesh");
-            return result;
-        }
-
-        private static Dictionary<BlockTypes, MeshDefinition> CreateGameBlocksVertices(Dictionary<Vector3SByte, Block> chunkBlocks)
+        private static Dictionary<BlockTypes, MeshDefinition> CreateChunkBlocks(Dictionary<Vector3SByte, Block> chunkBlocks)
         {
             Dictionary<BlockTypes, MeshDefinition> chunkMesh = new();
             Span<Block> blocks = chunkBlocks.Select(vb => vb.Value).ToArray();
+            Block neighborBlock;
+            bool isVisible = false;
+
             foreach (Block chunkBlock in blocks)
             {
-                var isVisible = false;
-                foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
+                isVisible = false;
+                foreach (FaceSides face in Enum.GetValues(typeof(FaceSides)))
                 {
-                    var neighborBlock = chunkBlock.ParentChunk.GetNeighbor(chunkBlock.BlockCoords, face);
+                    neighborBlock = chunkBlock.ParentChunk.GetNeighbor(chunkBlock.BlockCoords, face);
                     neighborBlock ??= chunkBlock.ParentChunk.GetNeighborFromNeighborChunk(chunkBlock.BlockCoords, face);
 
-                    isVisible = neighborBlock != null && !neighborBlock.IsTerrain || neighborBlock != null;
-                    if (isVisible) break;
+                    if (neighborBlock != null && !neighborBlock.IsTerrain)
+                    {
+                        isVisible = true;
+                        break;
+                    }
+                    else if (neighborBlock == null)
+                    {
+                        isVisible = true;
+                        break;
+                    }
                 }
 
-                if (chunkBlock.IsTerrain)
+                if (chunkBlock.IsTerrain && isVisible)
                 {
                     if (!chunkMesh.ContainsKey(chunkBlock.BlockType))
                     {
@@ -174,22 +224,6 @@ namespace Operation_HarmonyShift.GameWorld
             return chunkMesh;
         }
 
-        //void UpdateMyModel()
-        //{
-        //    // Dispose previous vertex and index buffer
-        //    modelComponent.Model.DisposeBuffers();
-
-        //    // Create new model, so the entity processors pick it up
-        //    modelComponent.Model = new Model
-        //    {
-        //        // Don't forget the material
-        //        worldMaterial
-        //    };
-
-        //    // Re-generate the procedual model
-        //    myModel.Generate(Services, modelComponent.Model);
-        //}
-
         private static void CreateBlockFaces(Block currentBlock, List<VertexPositionNormal> vertices, List<int> indices)
         {
             //Add each of the cubes vertices to the mesh of the array a single time
@@ -198,7 +232,7 @@ namespace Operation_HarmonyShift.GameWorld
 
             vertices.AddRange(blockVertices.Select(v => new VertexPositionNormal(v, CubeHelpers.Normals[blockVertices.IndexOf(v)])));
 
-            foreach (FaceSide face in Enum.GetValues(typeof(FaceSide)))
+            foreach (FaceSides face in Enum.GetValues(typeof(FaceSides)))
             {
                 neighborBlock = currentBlock.ParentChunk.GetNeighbor(currentBlock.BlockCoords, face);
                 neighborBlock ??= currentBlock.ParentChunk.GetNeighborFromNeighborChunk(currentBlock.BlockCoords, face);
@@ -214,14 +248,14 @@ namespace Operation_HarmonyShift.GameWorld
             }
         }
 
-        private static void CreateFace(List<Vector3> faceVertices, FaceSide face, List<VertexPositionNormal> vertices, List<int> indices)
+        private static void CreateFace(List<Vector3> faceVertices, FaceSides face, List<VertexPositionNormal> vertices, List<int> indices)
         {
             int firstVertex = vertices.Count - 8;
             switch (face)
             {
-                case FaceSide.Front:
-                case FaceSide.Left:
-                case FaceSide.Top:
+                case FaceSides.Front:
+                case FaceSides.Left:
+                case FaceSides.Top:
 
                     //First Triangle               
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[3]));
@@ -234,9 +268,9 @@ namespace Operation_HarmonyShift.GameWorld
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
                     break;
 
-                case FaceSide.Back:
-                case FaceSide.Right:
-                case FaceSide.Bottom:
+                case FaceSides.Back:
+                case FaceSides.Right:
+                case FaceSides.Bottom:
                     //first triangle               
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[0]));
                     indices.Add(vertices.FindIndex(firstVertex, v => v.Position == faceVertices[2]));

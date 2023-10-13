@@ -1,6 +1,6 @@
 ﻿namespace WorldBuilding.Enums
 {
-    public enum FaceSide
+    public enum FaceSides
     {
         Front,
         Back,
