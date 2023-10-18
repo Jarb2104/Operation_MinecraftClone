@@ -4,6 +4,7 @@ using WorldBuilding.Enums;
 using WorldBuilding.WorldDefinitions;
 using WorldBuilding.Helpers;
 using WorldBuilding.CustomErrors;
+using Stride.Core.Diagnostics;
 using WorldBuilding.Mathematics;
 
 namespace WorldBuilding.WorldModel

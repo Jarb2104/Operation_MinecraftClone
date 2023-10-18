@@ -45,7 +45,6 @@ namespace Operation_HarmonyShift.GameWorld
 
         [DataMember(6, "Cube Materials")]
         public Dictionary<BlockTypes, Material> WorldMaterials = new();
-
         public Vector3 BlockScale { get; set; }
 
         private World worldDescriptor = null;
@@ -95,9 +94,7 @@ namespace Operation_HarmonyShift.GameWorld
             //Generating world from parameters given coords
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
             worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, VisbleWorldSize, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
-
             Noise simplexNoise = new(WorldSeed);
-
             Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world");
             List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck, simplexNoise)).ToList();
             await Task.WhenAll(chunkGenerators);
@@ -124,26 +121,6 @@ namespace Operation_HarmonyShift.GameWorld
                 }
             });
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished populating the world's mesh with vertices and indexes");
-
-            //var count = 0;
-            //foreach (Dictionary<BlockTypes, MeshDefinition> chunkMesh in chunkMeshGenerators.Select(cmg => cmg.Result))
-            //{
-            //    foreach (KeyValuePair<BlockTypes, MeshDefinition> chunkMeshPortion in chunkMesh)
-            //    {
-
-            //        if (!verticesCollection.ContainsKey(chunkMeshPortion.Key))
-            //        {
-            //            verticesCollection.Add(chunkMeshPortion.Key, new List<VertexPositionNormal>());
-            //            indicesCollection.Add(chunkMeshPortion.Key, new List<int>());
-            //        }
-
-            //        indicesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshIndices.Select(index => index + verticesCollection[chunkMeshPortion.Key].Count));
-            //        verticesCollection[chunkMeshPortion.Key].AddRange(chunkMeshPortion.Value.meshVertices);
-            //    }
-            //    count++;
-            //}
-
-
             Log.Verbose($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Finished with world mesh generation");
             await Task.Run(() =>
             {

@@ -8,7 +8,5 @@
         Rock,
         Corrupt,
         Air
-
-        // Add more biomes as needed
     }
 }
