@@ -8,6 +8,5 @@
         Rock,
         Corrupt,
         Air
-        // Add more types as needed
     }
 }

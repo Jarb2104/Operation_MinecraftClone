@@ -95,7 +95,6 @@ namespace Operation_HarmonyShift.GameWorld
             Log.Debug($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Calling the world creator");
             worldDescriptor = WorldGenerator.GenerateWorld(WorldSeed, VisbleWorldSize, WorldHeight, ChunkWidthSize, ChunkLengthSize, Log);
             Noise simplexNoise = new(WorldSeed);
-
             Log.Info($"TimeStamp: {DateTime.Now.ToLongTimeString()} | Generating world");
             List<Task> chunkGenerators = worldDescriptor.worldChunks.Select(ck => CreateGameChunk(ck, simplexNoise)).ToList();
             await Task.WhenAll(chunkGenerators);
