@@ -1,255 +1,280 @@
 ﻿using Stride.Core.Mathematics;
-using Stride.Core.Diagnostics;
 using WorldBuilding.Enums;
 using WorldBuilding.WorldDefinitions;
 using WorldBuilding.Helpers;
 using WorldBuilding.CustomErrors;
-using Stride.Core.Diagnostics;
 using WorldBuilding.Mathematics;
+using Stride.Core.Diagnostics;
 
 namespace WorldBuilding.WorldModel
 {
     public class Chunk
     {
         public Vector3 ChunkCoords { get; }
-        public sbyte ChunkWidthSize { get; }
-        public sbyte ChunkLenghtSize { get; }
+        public sbyte ChunkSize { get; }
         public sbyte ChunkHeightSize { get; }
+        public bool IsVisible { get; set; }
         public World ParentWorld { get; }
-        public Dictionary<Vector3SByte, Block> chunkBlocks = null!;
+        public Dictionary<Vector3SByte, Block> ChunkBlocks = null!;
 
-        public Chunk(World parentWorld, int x, int y, int z, sbyte chunkWidthSize, sbyte chunkLengthSize, sbyte chunkHeightSize)
+        public Chunk(World parentWorld, Vector3 chunkCoords, sbyte chunkSize, sbyte chunkHeightSize)
         {
-            ChunkCoords = new Vector3(x, y, z);
+            ChunkCoords = chunkCoords;
             ParentWorld = parentWorld;
-            ChunkWidthSize = chunkWidthSize;
-            ChunkLenghtSize = chunkLengthSize;
+            ChunkSize = chunkSize;
             ChunkHeightSize = chunkHeightSize;
-            chunkBlocks = new Dictionary<Vector3SByte, Block>();
+            IsVisible = false;
+            ChunkBlocks = new Dictionary<Vector3SByte, Block>();
         }
 
-        public async Task GenerateTerrain(float blockScale, int worldHeight, Noise simplexNoise, Logger Log)
+        public void GenerateTerrain(float blockScale, short worldHeight, FastNoiseLite fastNoise)
         {
-            Log.Warning($"{DateTime.Now.ToLongTimeString()} | Generating chunk {ChunkCoords}");
-            chunkBlocks = await Task.Run(() => GenerateChunkBlocks(blockScale, (int)ChunkCoords.X, (int)ChunkCoords.Y, (int)ChunkCoords.Z, ChunkWidthSize, ChunkLenghtSize, ChunkHeightSize, worldHeight, simplexNoise, Log));
-        }
+            //ulong NoiseOffset = ulong.MaxValue / 2;
+            Dictionary<Vector3SByte, Block> chunkBlocks = new();
+            Random terrainRandomer = new();
+            decimal[,] terrainNoise = new decimal[ChunkSize, ChunkSize];
+            decimal xCoordinate;
+            decimal zCoordinate;
 
-        public Dictionary<Vector3SByte, Block> GenerateChunkBlocks(float blockScale, int X, int Y, int Z, sbyte chunkWidth, sbyte chunkLength, sbyte chunkHeight, int worldHeight, Noise simplexNoise, Logger Log)
-        {
-            Dictionary<Vector3SByte, Block> newChunkBlocks = new();
-            Random ran = new();
-            for (sbyte i = 0; i < chunkWidth; i++)
+            for (sbyte x = 0; x < ChunkSize; x++)
             {
-                for (sbyte k = 0; k < chunkLength; k++)
+                for (sbyte z = 0; z < ChunkSize; z++)
                 {
-                    float mountainNoise = simplexNoise.CalcPixel2D((ulong)(i + X * chunkWidth), (ulong)(k + Z * chunkLength), WorldVariables.MountainScale) * WorldVariables.MountainAmplitude / 70;
-                    float detailNoise = simplexNoise.CalcPixel2D((ulong)(i + X * chunkWidth), (ulong)(k + Z * chunkLength), WorldVariables.DetailScale) * WorldVariables.DetailAmplitude / 100;
-                    float biomeNoise = simplexNoise.CalcPixel2D((ulong)(i + X * chunkWidth), (ulong)(k + Z * chunkLength), WorldVariables.BiomeScale) * WorldVariables.BiomeAmplitude;
-                    int terrainHeight = (int)Math.Round(mountainNoise + detailNoise, 0);
-                    decimal mountainCutOffComparer = Math.Round((decimal)terrainHeight / worldHeight * 100);
-                    bool Wasgrass = false;
+                    xCoordinate = (decimal)(ChunkCoords.X * ChunkSize + x);
+                    zCoordinate = (decimal)(ChunkCoords.Z * ChunkSize + z);
+                    terrainNoise[x, z] = fastNoise.GetNoise(xCoordinate * WorldVariables.MountainScale, zCoordinate * WorldVariables.MountainScale);
+                    terrainNoise[x, z] = Interpolate(terrainNoise[x, z], worldHeight);
+                }
+            }
 
-                    for (sbyte j = chunkHeight; j > -1; j--)
+            decimal biomeNoise = 1;
+            for (sbyte x = 0; x < ChunkSize; x++)
+            {
+                for (sbyte z = 0; z < ChunkSize; z++)
+                {
+                    for (sbyte y = ChunkHeightSize; y >= 0; y--)
                     {
-                        int cubeHeight = j + Y * chunkHeight;
-                        bool isTerrain = cubeHeight < terrainHeight;
-                        int cubeOffSet = terrainHeight - cubeHeight;
-                        //This is a placeholder need to pull out the BlockType calculation, include different types of biomes, and change how mountain blocktypes are placed depending on the height of the mountain
-                        BlockTypes currentBlockType = BlockTypes.Air;
-
-                        if (cubeOffSet == 1)
-                        {
-                            currentBlockType = BlockTypes.Grass;
-                        }
-                        else if (cubeOffSet >= 2 && cubeOffSet < 7)
-                        {
-                            currentBlockType = BlockTypes.Dirt;
-                        }
-                        else if (cubeOffSet >= 7 && cubeOffSet < 34)
-                        {
-                            currentBlockType = BlockTypes.Rock;
-                        }
-                        else if (cubeOffSet >= 34)
-                        {
-                            currentBlockType = BlockTypes.Corrupt;
-                        }
-
-                        if (mountainCutOffComparer > 25)
-                        {
-                            currentBlockType = BlockTypes.Rock;
-
-                            if (terrainHeight > 210)
-                            {
-                                currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 210 && terrainHeight > 205)
-                            {
-                                if (ran.Next(10) < 9)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 205 && terrainHeight > 200)
-                            {
-                                if (ran.Next(10) < 8)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 200 && terrainHeight > 195)
-                            {
-                                if (ran.Next(10) < 7)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 195 && terrainHeight > 190)
-                            {
-                                if (ran.Next(10) < 6)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 190 && terrainHeight > 185)
-                            {
-                                if (ran.Next(10) < 5)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 185 && terrainHeight > 175)
-                            {
-                                if (ran.Next(10) < 4)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 175 && terrainHeight > 165)
-                            {
-                                if (ran.Next(10) < 3)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (terrainHeight <= 165 && terrainHeight > 150)
-                            {
-                                if (ran.Next(10) < 2)
-                                    currentBlockType = BlockTypes.Snow;
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 180 && terrainHeight > 155)
-                            {
-                                if (ran.Next(10) < 3)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 155 && terrainHeight > 140)
-                            {
-                                if (ran.Next(10) < 4)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 140 && terrainHeight > 130)
-                            {
-                                if (ran.Next(10) < 5)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 130 && terrainHeight > 120)
-                            {
-                                if (ran.Next(10) < 6)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 120 && terrainHeight > 115)
-                            {
-                                if (ran.Next(10) < 7)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 115 && terrainHeight > 110)
-                            {
-                                if (ran.Next(10) < 8)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 1 && terrainHeight <= 110)
-                            {
-                                if (ran.Next(10) < 9)
-                                {
-                                    currentBlockType = BlockTypes.Grass;
-                                    Wasgrass = true;
-                                }
-                            }
-
-                            if (cubeOffSet == 2 && terrainHeight <= 150)
-                            {
-                                if (Wasgrass)
-                                {
-                                    currentBlockType = BlockTypes.Dirt;
-                                    Wasgrass = false;
-                                }
-                            }
-                        }
-
-                        Block newBlock = new(this, i, j, k, isTerrain, blockScale)
-                        {
-                            Biome = (sbyte)Math.Floor(biomeNoise) switch
-                            {
-                                <= WorldConstants.ForestThreshold => Biomes.Forest,
-                                > WorldConstants.ForestThreshold and <= WorldConstants.DesertThreshold => Biomes.Desert,
-                                > WorldConstants.DesertThreshold and <= WorldConstants.JungleThreshold => Biomes.Jungle,
-                                > WorldConstants.JungleThreshold and <= WorldConstants.TundraThreshold => Biomes.Tundra,
-                                > WorldConstants.TundraThreshold and <= WorldConstants.IcyThreshold => Biomes.Icy,
-                                > WorldConstants.IcyThreshold and <= WorldConstants.SwampThreshold => Biomes.Swamp,
-                                _ => Biomes.Plains
-                            },
-                            BlockType = currentBlockType,
-                        };
-                        newChunkBlocks.Add(new Vector3SByte(i, j, k), newBlock);
+                        GenerateBlock(new Vector3SByte(x, y, z), blockScale, terrainNoise[x, z], worldHeight, biomeNoise, terrainRandomer, chunkBlocks);
                     }
                 }
             }
-            Log.Info($"{DateTime.Now.ToLongTimeString()} | Chunk {ChunkCoords} finished generating");
-            return newChunkBlocks;
+
+            ChunkBlocks = chunkBlocks;
         }
 
-        public Block? GetNeighbor(Vector3SByte blockCoords, FaceSide face)
+        public bool CheckVisibility()
         {
-            if (chunkBlocks.ContainsKey(blockCoords))
+            Span<KeyValuePair<Vector3SByte, Block>> spanBlocks = ChunkBlocks.ToArray();
+            Block? neighborBlock;
+
+            foreach (KeyValuePair<Vector3SByte, Block> block in spanBlocks)
             {
-                Vector3SByte neighBorCoords = blockCoords + CubeHelpers.BlockNeighbors[(short)face];
-                if (chunkBlocks.ContainsKey(neighBorCoords))
+                foreach (FaceSides face in Enum.GetValues(typeof(FaceSides)))
                 {
-                    return (Block?)chunkBlocks[neighBorCoords];
-                }
-                else
-                {
-                    return null;
+                    neighborBlock = GetNeighbor(block.Key, face);
+                    neighborBlock ??= GetNeighborFromNeighborChunk(block.Key, face);
+
+                    if (neighborBlock == null || neighborBlock.BlockType == BlockTypes.Air)
+                    {
+                        block.Value.IsVisible = true;
+                        IsVisible = true;
+                        break;
+                    }
                 }
             }
-            else
-            {
-                throw new BlockOutOfRangeException("Block coordinates are out of range.");
-            }
+
+            return IsVisible;
         }
 
-        public Block? GetNeighborFromNeighborChunk(Vector3SByte blockCoords, FaceSide face)
+        private static decimal Interpolate(decimal value, short worldHeight)
         {
-            Chunk? NeighborChunk = ParentWorld.GetChunkNeighbor(chunkBlocks[blockCoords].ParentChunk.ChunkCoords, face);
-            if (NeighborChunk == null)
+            return (value + 1) * (worldHeight / 2);
+        }
+
+        private void GenerateBlock(Vector3SByte blockCoords, float blockScale, decimal terrainHeight, short worldHeight, decimal biomeNoise, Random terrainRandomer, Dictionary<Vector3SByte, Block> chunkBlocks)
+        {
+            Vector3SByte neighborCoords;
+            int cubeHeight = blockCoords.Y + (int)ChunkCoords.Y * ChunkHeightSize;
+            int cubeOffSet = (int)terrainHeight - cubeHeight;
+            double mountainCutOffComparer = Math.Round((double)terrainHeight / worldHeight * 100);
+            BlockTypes currentBlockType = cubeHeight <= terrainHeight ? BlockTypes.Grass : BlockTypes.Air;
+
+            Block newBlock = new(this, blockCoords, blockScale)
+            {
+                Biome = (sbyte)Math.Floor(biomeNoise) switch
+                {
+                    <= WorldConstants.ForestThreshold => Biomes.Forest,
+                    > WorldConstants.ForestThreshold and <= WorldConstants.DesertThreshold => Biomes.Desert,
+                    > WorldConstants.DesertThreshold and <= WorldConstants.JungleThreshold => Biomes.Jungle,
+                    > WorldConstants.JungleThreshold and <= WorldConstants.TundraThreshold => Biomes.Tundra,
+                    > WorldConstants.TundraThreshold and <= WorldConstants.IcyThreshold => Biomes.Icy,
+                    > WorldConstants.IcyThreshold and <= WorldConstants.SwampThreshold => Biomes.Swamp,
+                    _ => Biomes.Plains
+                },
+            };
+
+            //This is a placeholder need to pull out the BlockType calculation, include different types of biomes, and change how mountain blocktypes are placed depending on the height of the mountain
+            if (currentBlockType != BlockTypes.Air)
+            {
+                if (cubeOffSet == 1)
+                {
+                    currentBlockType = BlockTypes.Grass;
+                }
+                else if (cubeOffSet >= 2 && cubeOffSet < 7)
+                {
+                    currentBlockType = BlockTypes.Dirt;
+                }
+                else if (cubeOffSet >= 7 && cubeOffSet < 34)
+                {
+                    currentBlockType = BlockTypes.Rock;
+                }
+                else if (cubeOffSet >= 34)
+                {
+                    currentBlockType = BlockTypes.Corrupt;
+                }
+
+                if (mountainCutOffComparer > 25)
+                {
+                    currentBlockType = BlockTypes.Rock;
+
+                    if (terrainHeight > 210)
+                    {
+                        currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 210 && terrainHeight > 205)
+                    {
+                        if (terrainRandomer.Next(10) < 9)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 205 && terrainHeight > 200)
+                    {
+                        if (terrainRandomer.Next(10) < 8)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 200 && terrainHeight > 195)
+                    {
+                        if (terrainRandomer.Next(10) < 7)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 195 && terrainHeight > 190)
+                    {
+                        if (terrainRandomer.Next(10) < 6)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 190 && terrainHeight > 185)
+                    {
+                        if (terrainRandomer.Next(10) < 5)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 185 && terrainHeight > 175)
+                    {
+                        if (terrainRandomer.Next(10) < 4)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 175 && terrainHeight > 165)
+                    {
+                        if (terrainRandomer.Next(10) < 3)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (terrainHeight <= 165 && terrainHeight > 150)
+                    {
+                        if (terrainRandomer.Next(10) < 2)
+                            currentBlockType = BlockTypes.Snow;
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 180 && terrainHeight > 155)
+                    {
+                        if (terrainRandomer.Next(10) < 3)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 155 && terrainHeight > 140)
+                    {
+                        if (terrainRandomer.Next(10) < 4)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 140 && terrainHeight > 130)
+                    {
+                        if (terrainRandomer.Next(10) < 5)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 130 && terrainHeight > 120)
+                    {
+                        if (terrainRandomer.Next(10) < 6)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 120 && terrainHeight > 115)
+                    {
+                        if (terrainRandomer.Next(10) < 7)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 115 && terrainHeight > 110)
+                    {
+                        if (terrainRandomer.Next(10) < 8)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 0 && terrainHeight <= 110)
+                    {
+                        if (terrainRandomer.Next(10) < 9)
+                        {
+                            currentBlockType = BlockTypes.Grass;
+                        }
+                    }
+
+                    if (cubeOffSet == 1 && terrainHeight <= 150)
+                    {
+                        neighborCoords = blockCoords + CubeHelpers.BlockNeighbors[(sbyte)FaceSides.Top];
+                        if (ChunkBlocks.ContainsKey(neighborCoords))
+                        {
+                            if (ChunkBlocks[neighborCoords].BlockType == BlockTypes.Grass)
+                            {
+                                currentBlockType = BlockTypes.Dirt;
+                            }
+                        }
+                    }
+                }
+            }
+
+            newBlock.BlockType = currentBlockType;
+            chunkBlocks.Add(blockCoords, newBlock);
+        }
+
+        public Block? GetNeighbor(Vector3SByte blockCoords, FaceSides face)
+        {
+            Vector3SByte neighBorCoords = blockCoords + CubeHelpers.BlockNeighbors[(sbyte)face];
+            ChunkBlocks.TryGetValue(neighBorCoords, out Block? neighbor);
+            return neighbor;
+        }
+
+        public Block? GetNeighborFromNeighborChunk(Vector3SByte blockCoords, FaceSides face)
+        {
+            Chunk? NeighborChunk = ParentWorld.GetChunkNeighbor(ChunkBlocks[blockCoords].ParentChunk.ChunkCoords, face);
+            if (NeighborChunk == null || NeighborChunk.ChunkBlocks.Count == 0)
             {
                 return null;
             }
@@ -257,27 +282,27 @@ namespace WorldBuilding.WorldModel
             Vector3SByte neighborBlock = new(blockCoords.X, blockCoords.Y, blockCoords.Z);
             switch (face)
             {
-                case FaceSide.Front:
-                    neighborBlock.Z = (sbyte)(ChunkLenghtSize - 1);
+                case FaceSides.Front:
+                    neighborBlock.Z = (sbyte)(ChunkSize - 1);
                     break;
-                case FaceSide.Back:
+                case FaceSides.Back:
                     neighborBlock.Z = 0;
                     break;
-                case FaceSide.Left:
-                    neighborBlock.X = (sbyte)(ChunkWidthSize - 1);
+                case FaceSides.Left:
+                    neighborBlock.X = (sbyte)(ChunkSize - 1);
                     break;
-                case FaceSide.Right:
+                case FaceSides.Right:
                     neighborBlock.X = 0;
                     break;
-                case FaceSide.Bottom:
+                case FaceSides.Bottom:
                     neighborBlock.Y = (sbyte)(ChunkHeightSize - 1);
                     break;
-                case FaceSide.Top:
+                case FaceSides.Top:
                     neighborBlock.Y = 0;
                     break;
             }
 
-            return NeighborChunk.chunkBlocks[neighborBlock];
+            return NeighborChunk.ChunkBlocks[neighborBlock];
         }
     }
 }

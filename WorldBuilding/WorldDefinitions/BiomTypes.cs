@@ -1,6 +1,6 @@
 ﻿namespace WorldBuilding.Enums
 {
-    public enum Biomes
+    public enum Biomes : byte
     {
         Forest,
         Desert,

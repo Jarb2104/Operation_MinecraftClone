@@ -5,6 +5,7 @@ namespace WorldBuilding.WorldDefinitions
     public static class WorldConstants
     {
         public const Biomes DefaultBiome = Biomes.Plains;
+        public const sbyte WorldHeightInChunks = 10;
 
         // Define biome thresholds
         public const sbyte ForestThreshold = 0;
