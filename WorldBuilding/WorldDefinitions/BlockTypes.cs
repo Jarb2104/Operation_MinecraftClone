@@ -2,11 +2,12 @@
 {
     public enum BlockTypes : ushort
     {
-        Snow,
-        Grass,
+        Air,
+        Corrupt,
         Dirt,
+        Grass,
         Rock,
-        Corrupt
+        Snow
         // Add more types as needed
     }
 }

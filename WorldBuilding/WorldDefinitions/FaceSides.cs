@@ -1,6 +1,6 @@
 ﻿namespace WorldBuilding.Enums
 {
-    public enum FaceSides
+    public enum FaceSides : sbyte
     {
         Front,
         Back,

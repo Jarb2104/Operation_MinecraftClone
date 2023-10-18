@@ -1394,7 +1394,7 @@ namespace WorldBuilding.Mathematics
         public static Vector3Int RotationYawPitchRoll(Quaternion quaternion)
         {
             Quaternion.RotationYawPitchRoll(ref quaternion, out float rX, out float rY, out float rZ);
-            return new Vector3Int(rX, rY, rZ);
+            return new Vector3Int((int)rX, (int)rY, (int)rZ);
         }
 
         /// <summary>

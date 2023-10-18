@@ -1622,7 +1622,7 @@ namespace WorldBuilding.Mathematics
         /// <returns>The result of the conversion.</returns>
         public static explicit operator Int3(Vector3SByte value)
         {
-            return new Int3((int)value.X, (int)value.Y, (int)value.Z);
+            return new Int3(value.X, value.Y, value.Z);
         }
 
         /// <summary>

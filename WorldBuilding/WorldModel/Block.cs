@@ -10,25 +10,24 @@ namespace WorldBuilding.WorldModel
         public Vector3SByte BlockCoords { get; }
         public Biomes Biome { get; set; }
         public BlockTypes BlockType { get; set; }
-        public bool IsTerrain { get; set; }
+        public bool IsVisible { get; set; }
         public float BlockScale { get; }
         public Chunk ParentChunk { get; }
 
-        public Block(Chunk parentChunk, Vector3SByte blockCoords, bool isTerrain, float blockScale)
+        public Block(Chunk parentChunk, Vector3SByte blockCoords, float blockScale)
         {
-            BlockCoords = blockCoords;
-            IsTerrain = isTerrain;
-            BlockScale = blockScale;
             ParentChunk = parentChunk;
+            BlockCoords = blockCoords;
+            BlockScale = blockScale;
         }
 
         public List<Vector3> GetVertices()
         {
             return CubeHelpers.Vertices.Select(v => v * BlockScale + 
             new Vector3(
-                BlockCoords.X * BlockScale + ParentChunk.ChunkCoords.X * ParentChunk.ChunkWidthSize * BlockScale,
+                BlockCoords.X * BlockScale + ParentChunk.ChunkCoords.X * ParentChunk.ChunkSize * BlockScale,
                 BlockCoords.Y * BlockScale + ParentChunk.ChunkCoords.Y * ParentChunk.ChunkHeightSize * BlockScale, 
-                BlockCoords.Z * BlockScale + ParentChunk.ChunkCoords.Z * ParentChunk.ChunkLenghtSize * BlockScale)).ToList();
+                BlockCoords.Z * BlockScale + ParentChunk.ChunkCoords.Z * ParentChunk.ChunkSize * BlockScale)).ToList();
         }
 
         public List<Vector3> GetFaceVertices(FaceSides side)

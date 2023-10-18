@@ -3,18 +3,18 @@
     public static class WorldVariables
     {
         //These values should be populate from a config file, maybe allow a user to play with the values for a world of their liking
-        public const float MountainScale = 0.0007f;
-        public const float MountainAmplitude = 70.0f;
-        public const float MountainReducer = 60.0f;
+        public const decimal MountainScale = 0.3m;
+        public const decimal MountainAmplitude = 70.0m;
+        public const decimal MountainReducer = 60.0m;
 
-        public const float DetailScale = 0.009f;
-        public const float DetailAmplitude = 10f;
-        public const float DetailReducer = 70.0f;
+        public const decimal DetailScale = 0.009m;
+        public const decimal DetailAmplitude = 10m;
+        public const decimal DetailReducer = 70.0m;
 
-        public const float DetailScale2 = 0.1f;
-        public const float DetailAmplitude2 = 0.85f;
-        public const float DetailReducer2 = 80.0f;
-        
-        public const float BiomeScale = 0.01f;
+        public const decimal DetailScale2 = 0.1m;
+        public const decimal DetailAmplitude2 = 0.85m;
+        public const decimal DetailReducer2 = 80.0m;
+
+        public const decimal BiomeScale = 0.01m;
     }
 }

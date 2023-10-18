@@ -27,11 +27,9 @@ Hierarchy:
                     fd660a39e402c03a018cb7c97529dcb9: !Operation_HarmonyShift.GameWorld.GameWorldFactory,Operation_HarmonyShift
                         Id: 3a15152d-5c7a-4916-9900-bee127041fbe
                         World Seed: 12022111
-                        Chunk Width in Blocks: 32
-                        Chunk Length in Blocks: 32
-                        World Size in Chunks: 1000
-                        Visible World Size in Chunks: 25
-                        World Height in Blocks: 319
+                        Chunk Size in Blocks: 32
+                        World Height in Blocks: 320
+                        Visible World: 500
                         Cube Materials:
                             66a81fddd0724654a5ed71c45c61ce2e~Snow: 4fcf090a-a50a-4c63-9602-c835aa9c89c0:Materials/Snow
                             daac281c5f43d9b0d9bbbb328f95bbd7~Grass: d74d61e2-d73e-4ffa-811f-c5df5e292c15:Materials/Grass
@@ -103,7 +101,7 @@ Hierarchy:
                 Components:
                     31130025352f672bcf59bc8aeead6d78: !TransformComponent
                         Id: 405514b2-04ba-4f7f-a7fd-55ce021e2dea
-                        Position: {X: 0.0, Y: 94.49478, Z: 0.0}
+                        Position: {X: 0.0, Y: 95.0, Z: 0.0}
                         Rotation: {X: -0.07782839, Y: -0.9212198, Z: -0.2468401, W: 0.2904595}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
